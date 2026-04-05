@@ -31,18 +31,16 @@ public:
         "e-"
         // ELF mangling
         "m:e-"
-        // Pointers are 32-bit with 32-bit alignment
-        "p:32:32-"
-        // Native integer widths are 32 bits
+        // Pointer size is 32-bit and the alignment matches.
+        "p:32:32:32-"
+        // Supports natively 32-bit integer.
         "n32-"
         // i64 are aligned on 64, i32 on 32, i16 on 16 and i1 on 8.
-        "i64:64-i32:32-i16:16-i8:8-"
-        // f32 aligned on 32-bit, f64 aligned on 64-bit
-        "f32:32-f64:64-"
-        // Aggregate alignment
-        "a:0:32-"
-        // 128-bit vectors are 128-bit aligned
-        "v128:128");
+        "i64:64:64-i32:32:32-i16:16:16-i1:8:8-"
+        // f32 aligned on 32-bit.
+        "f32:32:32-"
+        // v32 aligned on 32-bit.
+        "v32:32:32");
   }
 
   /// Appends the target-specific \#define values for this

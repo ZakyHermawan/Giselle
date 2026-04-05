@@ -6,6 +6,22 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/Support/Compiler.h" // For LLVM_EXTERNAL_VISIBILITY.
+#include "GiselleTargetInfo.h"
+#include "llvm/MC/TargetRegistry.h" // For RegisterTarget.
+#include "llvm/Support/Compiler.h"  // For LLVM_EXTERNAL_VISIBILITY.
+#include "llvm/TextAPI/Target.h"    // For Target class.
 
-extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeGiselleTargetInfo() {}
+using namespace llvm;
+
+Target &llvm::getTheGiselleTarget() {
+  static Target TheGiselleTarget;
+  return TheGiselleTarget;
+}
+
+
+extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeGiselleTargetInfo() {
+  RegisterTarget<Triple::giselle, /*HasJIT=*/false> X(
+      getTheGiselleTarget(), /*Name=*/"Giselle",
+      /*Desc=*/"A simple LLVM Backend for RV32I",
+      /*BackendName=*/"Giselle");
+}

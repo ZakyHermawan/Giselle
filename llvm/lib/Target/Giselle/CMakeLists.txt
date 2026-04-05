@@ -7,7 +7,10 @@ add_llvm_target(GiselleCodeGen
   GiselleDesc
   GiselleInfo
 
+  CodeGen
+  Core
   Support
+  Target
 
   ADD_TO_COMPONENT
   Giselle

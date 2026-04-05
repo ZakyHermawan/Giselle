@@ -120,6 +120,9 @@ std::unique_ptr<TargetInfo> AllocateTarget(const llvm::Triple &Triple,
   case llvm::Triple::arc:
     return std::make_unique<ARCTargetInfo>(Triple, Opts);
 
+  case llvm::Triple::giselle:
+    return std::make_unique<GiselleTargetInfo>(Triple, Opts);
+
   case llvm::Triple::xcore:
     return std::make_unique<XCoreTargetInfo>(Triple, Opts);
 

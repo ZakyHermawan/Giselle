@@ -6,6 +6,7 @@ tablegen(LLVM GiselleGenRegisterInfo.inc -gen-register-info)
 add_public_tablegen_target(GiselleCommonTableGen)
 
 add_llvm_target(GiselleCodeGen
+  GiselleTargetObjectFile.cpp
   GiselleTargetLowering.cpp
   GiselleTargetMachine.cpp
   GiselleSubtarget.cpp

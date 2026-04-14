@@ -5,7 +5,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "GiselleTargetMachine.h"
-#include "TargetInfo/GiselleTargetInfo.h" // For getTheGiselleTarget.
+#include "GiselleTargetObjectFile.h"
+#include "TargetInfo/GiselleTargetInfo.h"
 #include "llvm/MC/TargetRegistry.h"     // For RegisterTargetMachine.
 #include "llvm/Support/Compiler.h"      // For LLVM_EXTERNAL_VISIBILITY.
 
@@ -18,21 +19,31 @@ extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeGiselleTarget() {
   RegisterTargetMachine<GiselleTargetMachine> X(getTheGiselleTarget());
 }
 
+static std::unique_ptr<TargetLoweringObjectFile> createTLOF(const Triple &TT) {
+  if (TT.isOSBinFormatELF())
+    return std::make_unique<GiselleElfTargetObjectFile>();
+  if (TT.isOSBinFormatMachO())
+    return std::make_unique<GiselleMachoTargetObjectFile>();
+  // Other format not supported yet.
+  return nullptr;
+}
+
 static const char *GiselleDataLayoutStr =
     "e-m:e-p:32:32:32-n32-i64:64:64-i32:32:32-i16:16:16-i1:8:8-f32:32:32-v32:32:32";
 
 GiselleTargetMachine::GiselleTargetMachine(const Target &T, const Triple &TT,
-                                       StringRef CPU, StringRef FS,
-                                       const TargetOptions &Options,
-                                       std::optional<Reloc::Model> RM,
-                                       std::optional<CodeModel::Model> CM,
-                                       CodeGenOptLevel OL, bool JIT)
+                                           StringRef CPU, StringRef FS,
+                                           const TargetOptions &Options,
+                                           std::optional<Reloc::Model> RM,
+                                           std::optional<CodeModel::Model> CM,
+                                           CodeGenOptLevel OL, bool JIT)
     : CodeGenTargetMachineImpl(T, GiselleDataLayoutStr, TT, CPU, FS, Options,
                                // Use the simplest relocation by default.
                                RM ? *RM : Reloc::Static,
-                               CM ? *CM : CodeModel::Small, OL) {
-    initAsmInfo();
-  }
+                               CM ? *CM : CodeModel::Small, OL),
+      TLOF(createTLOF(getTargetTriple())) {
+  initAsmInfo();
+}
 
 GiselleTargetMachine::~GiselleTargetMachine() = default;
 

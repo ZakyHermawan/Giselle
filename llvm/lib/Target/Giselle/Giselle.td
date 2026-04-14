@@ -7,8 +7,11 @@ def : ProcessorModel<"generic", NoSchedModel, /*Features=*/[]>;
 
 def GiselleInstrInfo : InstrInfo;
 
+def GiselleAsmParser : AsmParser;
+
 def Giselle : Target {
   let InstructionSet = GiselleInstrInfo;
+  let AssemblyParsers = [GiselleAsmParser];
 }
 
 defm : RemapAllTargetPseudoPointerOperands<GPR32>;

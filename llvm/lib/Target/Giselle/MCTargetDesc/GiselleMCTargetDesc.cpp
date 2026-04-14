@@ -1,9 +1,3 @@
-//===--------------------- GiselleMCTargetDesc.cpp ------------------------===//
-//
-// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
 //===----------------------------------------------------------------------===//
 //
 // This file provides Giselle specific target descriptions.
@@ -11,6 +5,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "GiselleMCAsmInfo.h"
+#include "GiselleInstPrinter.h"
 #include "GiselleMCTargetDesc.h"
 #include "TargetInfo/GiselleTargetInfo.h" // For getTheGiselleTarget.
 #include "llvm/MC/MCSubtargetInfo.h"
@@ -67,6 +62,16 @@ static MCAsmInfo *createGiselleMCAsmInfo(const MCRegisterInfo &MRI,
   return MAI;
 }
 
+static MCInstPrinter *createGiselleMCInstPrinter(const Triple &T,
+                                               unsigned SyntaxVariant,
+                                               const MCAsmInfo &MAI,
+                                               const MCInstrInfo &MII,
+                                               const MCRegisterInfo &MRI) {
+  if (SyntaxVariant == 0)
+    return new GiselleInstPrinter(MAI, MII, MRI);
+  return nullptr;
+}
+
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeGiselleTargetMC() {
   Target &TheTarget = getTheGiselleTarget();
 
@@ -82,4 +87,7 @@ extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeGiselleTargetMC() {
 
   // Register the MC asm info.
   RegisterMCAsmInfoFn X(TheTarget, createGiselleMCAsmInfo);
+
+  // Register the MCInst to asm printer.
+  TargetRegistry::RegisterMCInstPrinter(TheTarget, createGiselleMCInstPrinter);
 }

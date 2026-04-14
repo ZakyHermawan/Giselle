@@ -4,6 +4,8 @@ set(LLVM_TARGET_DEFINITIONS Giselle.td)
 tablegen(LLVM GiselleGenSubtargetInfo.inc -gen-subtarget)
 tablegen(LLVM GiselleGenRegisterInfo.inc -gen-register-info)
 tablegen(LLVM GiselleGenInstrInfo.inc -gen-instr-info)
+tablegen(LLVM GiselleGenAsmWriter.inc -gen-asm-writer)
+tablegen(LLVM GiselleGenAsmMatcher.inc -gen-asm-matcher)
 add_public_tablegen_target(GiselleCommonTableGen)
 
 add_llvm_target(GiselleCodeGen
@@ -30,5 +32,6 @@ add_llvm_target(GiselleCodeGen
   Giselle
 )
 
+add_subdirectory(AsmParser)
 add_subdirectory(MCTargetDesc)
 add_subdirectory(TargetInfo)

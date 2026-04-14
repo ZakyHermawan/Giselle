@@ -1,4 +1,5 @@
 add_llvm_component_library(LLVMGiselleDesc
+  GiselleMCAsmInfo.cpp
   GiselleMCTargetDesc.cpp
 
   LINK_COMPONENTS

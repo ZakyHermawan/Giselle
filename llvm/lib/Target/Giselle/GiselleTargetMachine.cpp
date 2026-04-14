@@ -30,7 +30,9 @@ GiselleTargetMachine::GiselleTargetMachine(const Target &T, const Triple &TT,
     : CodeGenTargetMachineImpl(T, GiselleDataLayoutStr, TT, CPU, FS, Options,
                                // Use the simplest relocation by default.
                                RM ? *RM : Reloc::Static,
-                               CM ? *CM : CodeModel::Small, OL) {}
+                               CM ? *CM : CodeModel::Small, OL) {
+    initAsmInfo();
+  }
 
 GiselleTargetMachine::~GiselleTargetMachine() = default;
 

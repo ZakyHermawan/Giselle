@@ -10,6 +10,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "GiselleMCAsmInfo.h"
 #include "GiselleMCTargetDesc.h"
 #include "TargetInfo/GiselleTargetInfo.h" // For getTheGiselleTarget.
 #include "llvm/MC/MCSubtargetInfo.h"
@@ -18,6 +19,7 @@
 #include "llvm/Support/Compiler.h"  // For LLVM_EXTERNAL_VISIBILITY.
 #include "llvm/TargetParser/Triple.h"
 #include "llvm/MC/MCRegisterInfo.h"
+#include "llvm/Support/ErrorHandling.h"
 
 using namespace llvm;
 
@@ -47,6 +49,20 @@ static MCInstrInfo *createGiselleMCInstrInfo() {
   return X;
 }
 
+static MCAsmInfo *createGiselleMCAsmInfo(const MCRegisterInfo &MRI,
+                                       const Triple &TheTriple,
+                                       const MCTargetOptions &Options) {
+  MCAsmInfo *MAI;
+  if (TheTriple.isOSBinFormatMachO())
+    MAI = new GiselleMCAsmInfoDarwin(TheTriple, Options);
+  else if (TheTriple.isOSBinFormatELF())
+    MAI = new GiselleMCAsmInfoELF(TheTriple, Options);
+  else
+    report_fatal_error("Binary format not supported");
+
+  return MAI;
+}
+
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeGiselleTargetMC() {
   Target &TheTarget = getTheGiselleTarget();
 
@@ -59,4 +75,7 @@ extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeGiselleTargetMC() {
 
   // Register the MC instruction info.
   TargetRegistry::RegisterMCInstrInfo(TheTarget, createGiselleMCInstrInfo);
+
+  // Register the MC asm info.
+  RegisterMCAsmInfoFn X(TheTarget, createGiselleMCAsmInfo);
 }

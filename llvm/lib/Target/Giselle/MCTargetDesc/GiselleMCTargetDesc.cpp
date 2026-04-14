@@ -14,6 +14,7 @@
 #include "TargetInfo/GiselleTargetInfo.h" // For getTheGiselleTarget.
 #include "llvm/MC/MCSubtargetInfo.h"
 #include "llvm/MC/TargetRegistry.h"
+#include "llvm/MC/MCInstrInfo.h"
 #include "llvm/Support/Compiler.h"  // For LLVM_EXTERNAL_VISIBILITY.
 #include "llvm/TargetParser/Triple.h"
 #include "llvm/MC/MCRegisterInfo.h"
@@ -40,10 +41,22 @@ static MCRegisterInfo *createGiselleMCRegisterInfo(const Triple &Triple) {
   return X;
 }
 
+static MCInstrInfo *createGiselleMCInstrInfo() {
+  MCInstrInfo *X = new MCInstrInfo();
+
+  return X;
+}
+
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeGiselleTargetMC() {
   Target &TheTarget = getTheGiselleTarget();
 
   // Register the MC subtarget info.
   TargetRegistry::RegisterMCSubtargetInfo(TheTarget,
                                           createGiselleMCSubtargetInfo);
+
+  // Register the MC register info.
+  TargetRegistry::RegisterMCRegInfo(TheTarget, createGiselleMCRegisterInfo);
+
+  // Register the MC instruction info.
+  TargetRegistry::RegisterMCInstrInfo(TheTarget, createGiselleMCInstrInfo);
 }

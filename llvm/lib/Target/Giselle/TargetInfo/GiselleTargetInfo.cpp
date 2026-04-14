@@ -21,7 +21,7 @@ Target &llvm::getTheGiselleTarget() {
 
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeGiselleTargetInfo() {
   RegisterTarget<Triple::giselle, /*HasJIT=*/false> X(
-      getTheGiselleTarget(), /*Name=*/"Giselle",
+      getTheGiselleTarget(), /*Name=*/"giselle",
       /*Desc=*/"A simple LLVM Backend for RV32I",
       /*BackendName=*/"Giselle");
 }

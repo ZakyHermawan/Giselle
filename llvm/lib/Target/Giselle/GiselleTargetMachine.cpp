@@ -1,9 +1,3 @@
-//===------------------- GiselleTargetMachine.cpp -------------------------===//
-//
-// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
 //===----------------------------------------------------------------------===//
 //
 // Implements the info about Giselle target spec.
@@ -14,6 +8,8 @@
 #include "TargetInfo/GiselleTargetInfo.h" // For getTheGiselleTarget.
 #include "llvm/MC/TargetRegistry.h"     // For RegisterTargetMachine.
 #include "llvm/Support/Compiler.h"      // For LLVM_EXTERNAL_VISIBILITY.
+
+#include <memory>
 
 using namespace llvm;
 
@@ -37,3 +33,21 @@ GiselleTargetMachine::GiselleTargetMachine(const Target &T, const Triple &TT,
                                CM ? *CM : CodeModel::Small, OL) {}
 
 GiselleTargetMachine::~GiselleTargetMachine() = default;
+
+const GiselleSubtarget *
+GiselleTargetMachine::getSubtargetImpl(const Function &F) const {
+  Attribute CPUAttr = F.getFnAttribute("target-cpu");
+  Attribute FSAttr = F.getFnAttribute("target-features");
+
+  StringRef CPU = CPUAttr.isValid() ? CPUAttr.getValueAsString() : TargetCPU;
+  StringRef FS = FSAttr.isValid() ? FSAttr.getValueAsString() : TargetFS;
+
+  // Eventually, we'll want to hook up a different subtarget based on at the
+  // target feature, target cpu, and tune cpu attached to F, but as of now,
+  // the target doesn't support anything fancy so we just have one subtarget
+  // for everything.
+  if (!SubtargetSingleton)
+    SubtargetSingleton =
+        std::make_unique<GiselleSubtarget>(TargetTriple, CPU, FS, *this);
+  return SubtargetSingleton.get();
+}

@@ -29,6 +29,10 @@ using namespace llvm;
 #define GET_REGINFO_MC_DESC
 #include "GiselleGenRegisterInfo.inc"
 
+#define GET_INSTRINFO_MC_DESC
+#define GET_INSTRINFO_MC_HELPERS
+#include "GiselleGenInstrInfo.inc"
+
 static MCSubtargetInfo *
 createGiselleMCSubtargetInfo(const Triple &TT, StringRef CPU, StringRef FS) {
   return createGiselleMCSubtargetInfoImpl(TT, CPU, /*TuneCPU*/ CPU, FS);
@@ -45,7 +49,7 @@ static MCRegisterInfo *createGiselleMCRegisterInfo(const Triple &Triple) {
 
 static MCInstrInfo *createGiselleMCInstrInfo() {
   MCInstrInfo *X = new MCInstrInfo();
-
+  InitGiselleMCInstrInfo(X);
   return X;
 }
 

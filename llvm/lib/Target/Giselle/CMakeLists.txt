@@ -3,6 +3,7 @@ add_llvm_component_group(Giselle)
 set(LLVM_TARGET_DEFINITIONS Giselle.td)
 tablegen(LLVM GiselleGenSubtargetInfo.inc -gen-subtarget)
 tablegen(LLVM GiselleGenRegisterInfo.inc -gen-register-info)
+tablegen(LLVM GiselleGenInstrInfo.inc -gen-instr-info)
 add_public_tablegen_target(GiselleCommonTableGen)
 
 add_llvm_target(GiselleCodeGen

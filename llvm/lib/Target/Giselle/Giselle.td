@@ -7,7 +7,9 @@ def : ProcessorModel<"generic", NoSchedModel, /*Features=*/[]>;
 
 def GiselleInstrInfo : InstrInfo;
 
-def GiselleAsmParser : AsmParser;
+def GiselleAsmParser : AsmParser {
+  let ShouldEmitMatchRegisterAltName = 1;
+}
 
 def Giselle : Target {
   let InstructionSet = GiselleInstrInfo;

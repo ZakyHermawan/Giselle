@@ -3,7 +3,7 @@
 
 // CHECK: add x0, x2, x3
 // ENCODING: [0x33,0x00,0x31,0x00]
-add x0, x2, x3
+add zero, x2, x3
 
 // CHECK: sub x1, x2, x3
 // ENCODING: [0xb3,0x00,0x31,0x40]

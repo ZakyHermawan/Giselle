@@ -259,8 +259,13 @@ ParseStatus GiselleAsmParser::parseRegister(OperandVector &Operands) {
     // (usually represented as Giselle::NoRegister).
     // All valid physical registers (including x0, x1, etc.) are assigned integer IDs starting from 1 by LLVM's TableGen.
     // See: GiselleGenRegisterInfoEnums.inc
-    if (RegNo == 0)
-      return ParseStatus::NoMatch;
+    if (RegNo == 0) {
+      RegNo = MatchRegisterAltName(Name); // Try alt names like "zero"
+      if (RegNo == 0)
+        return ParseStatus::NoMatch;
+      llvm::outs() << "Matched alternative register name: " << Name << "\n";
+      llvm::outs() << "Using register: " << RegNo << "\n";
+    }
 
     getLexer().Lex();
     Operands.push_back(GiselleOperand::createReg(RegNo, S, E));

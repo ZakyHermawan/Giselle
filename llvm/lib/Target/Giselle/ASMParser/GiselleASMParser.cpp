@@ -263,8 +263,6 @@ ParseStatus GiselleAsmParser::parseRegister(OperandVector &Operands) {
       RegNo = MatchRegisterAltName(Name); // Try alt names like "zero"
       if (RegNo == 0)
         return ParseStatus::NoMatch;
-      llvm::outs() << "Matched alternative register name: " << Name << "\n";
-      llvm::outs() << "Using register: " << RegNo << "\n";
     }
 
     getLexer().Lex();

@@ -1,5 +1,16 @@
 #pragma once
 
+#include "llvm/MC/MCInstrInfo.h"
+
+namespace llvm {
+
+class MCContext;
+class MCCodeEmitter;
+MCCodeEmitter *createGiselleMCCodeEmitter(const MCInstrInfo &MCII,
+                                          MCContext &Ctx);
+
+} // end namespace llvm.
+
 #define GET_REGINFO_ENUM
 #include "GiselleGenRegisterInfo.inc"
 

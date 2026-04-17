@@ -90,4 +90,8 @@ extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeGiselleTargetMC() {
 
   // Register the MCInst to asm printer.
   TargetRegistry::RegisterMCInstPrinter(TheTarget, createGiselleMCInstPrinter);
+
+  // Register the MC code emitter.
+  TargetRegistry::RegisterMCCodeEmitter(getTheGiselleTarget(),
+                                        createGiselleMCCodeEmitter);
 }

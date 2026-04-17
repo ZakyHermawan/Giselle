@@ -138,6 +138,7 @@ public:
 
   virtual void print(raw_ostream &OS, const MCAsmInfo &MAI) const override;
 
+  // Parse the mnemonics, e.g. add, sub, xor
   static std::unique_ptr<GiselleOperand> createToken(StringRef Str, SMLoc S) {
     auto Op = std::make_unique<GiselleOperand>(k_Token);
     Op->StartLoc = S;
@@ -253,6 +254,11 @@ ParseStatus GiselleAsmParser::parseRegister(OperandVector &Operands) {
     StringRef Name = getLexer().getTok().getIdentifier();
     unsigned RegNo = MatchRegisterName(Name);
 
+    // In LLVM, 0 does not represent the x0 register.
+    // Instead, 0 is a special sentinel value reserved by LLVM to mean "No Register"
+    // (usually represented as Giselle::NoRegister).
+    // All valid physical registers (including x0, x1, etc.) are assigned integer IDs starting from 1 by LLVM's TableGen.
+    // See: GiselleGenRegisterInfoEnums.inc
     if (RegNo == 0)
       return ParseStatus::NoMatch;
 
@@ -265,7 +271,6 @@ ParseStatus GiselleAsmParser::parseRegister(OperandVector &Operands) {
 bool GiselleAsmParser::parseInstruction(ParseInstructionInfo &Info,
                                       StringRef Name, SMLoc NameLoc,
                                       OperandVector &Operands) {
-
   Operands.push_back(GiselleOperand::createToken(Name, NameLoc));
 
   while (!getLexer().is(AsmToken::EndOfStatement)) {

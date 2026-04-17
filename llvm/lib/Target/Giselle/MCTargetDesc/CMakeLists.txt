@@ -2,6 +2,7 @@ add_llvm_component_library(LLVMGiselleDesc
   GiselleMCAsmInfo.cpp
   GiselleMCTargetDesc.cpp
   GiselleInstPrinter.cpp
+  GiselleMCCodeEmitter.cpp
 
   LINK_COMPONENTS
   Support

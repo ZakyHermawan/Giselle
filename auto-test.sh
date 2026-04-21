@@ -5,3 +5,4 @@
     clang/test/Preprocessor/giselle-predefined-arch-macros.c \
     llvm/test/MC/Giselle \
     llvm/test/CodeGen/Giselle
+

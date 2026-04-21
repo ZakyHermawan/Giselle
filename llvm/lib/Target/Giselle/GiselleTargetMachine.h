@@ -5,7 +5,9 @@
 //===----------------------------------------------------------------------===//
 
 #pragma once
+
 #include "GiselleSubtarget.h"
+#include "llvm/CodeGen/TargetPassConfig.h"
 #include "llvm/CodeGen/CodeGenTargetMachineImpl.h"
 #include "llvm/Target/TargetLoweringObjectFile.h"
 
@@ -17,6 +19,7 @@ namespace llvm {
 class GiselleTargetMachine : public CodeGenTargetMachineImpl {
   mutable std::unique_ptr<GiselleSubtarget> SubtargetSingleton;
   std::unique_ptr<TargetLoweringObjectFile> TLOF;
+
 public:
   GiselleTargetMachine(const Target &T, const Triple &TT, StringRef CPU,
                      StringRef FS, const TargetOptions &Options,
@@ -30,6 +33,19 @@ public:
   TargetLoweringObjectFile *getObjFileLowering() const override {
     return TLOF.get();
   }
+
+  TargetPassConfig *createPassConfig(PassManagerBase &PM) override;
+};
+
+class GisellePassConfig : public TargetPassConfig {
+public:
+  GisellePassConfig(GiselleTargetMachine &TM, PassManagerBase &PM)
+      : TargetPassConfig(TM, PM) {}
+
+  bool addIRTranslator() override;
+  bool addLegalizeMachineIR() override;
+  bool addRegBankSelect() override;
+  bool addGlobalInstructionSelect() override;
 };
 
 } // namespace llvm

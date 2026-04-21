@@ -25,6 +25,7 @@ add_llvm_target(GiselleCodeGen
   Analysis
   CodeGen
   Core
+  GlobalISel
   Support
   Target
   MC

@@ -1,8 +1,7 @@
-//===----------------------------------------------------------------------===//
-//
-// Implements the info about Giselle target spec.
-//
-//===----------------------------------------------------------------------===//
+#include "llvm/CodeGen/GlobalISel/IRTranslator.h"
+#include "llvm/CodeGen/GlobalISel/InstructionSelect.h"
+#include "llvm/CodeGen/GlobalISel/Legalizer.h"
+#include "llvm/CodeGen/GlobalISel/RegBankSelect.h"
 
 #include "GiselleTargetMachine.h"
 #include "GiselleTargetObjectFile.h"
@@ -63,4 +62,28 @@ GiselleTargetMachine::getSubtargetImpl(const Function &F) const {
     SubtargetSingleton =
         std::make_unique<GiselleSubtarget>(TargetTriple, CPU, FS, *this);
   return SubtargetSingleton.get();
+}
+
+TargetPassConfig *GiselleTargetMachine::createPassConfig(PassManagerBase &PM) {
+  return new GisellePassConfig(*this, PM);
+}
+
+bool GisellePassConfig::addIRTranslator() {
+  addPass(new IRTranslator(getOptLevel()));
+  return false;
+}
+
+bool GisellePassConfig::addLegalizeMachineIR() {
+  addPass(new Legalizer());
+  return false;
+}
+
+bool GisellePassConfig::addRegBankSelect() {
+  addPass(new RegBankSelect());
+  return false;
+}
+
+bool GisellePassConfig::addGlobalInstructionSelect() {
+  addPass(new InstructionSelect(getOptLevel()));
+  return false;
 }

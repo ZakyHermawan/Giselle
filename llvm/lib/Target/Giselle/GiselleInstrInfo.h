@@ -2,12 +2,13 @@
 
 #include "llvm/CodeGen/TargetInstrInfo.h"
 #include "GiselleRegisterInfo.h"
-#include "GiselleSubtarget.h"
 
 #define GET_INSTRINFO_HEADER
 #include "GiselleGenInstrInfo.inc"
 
 namespace llvm {
+
+class GiselleSubtarget;
 
 class GiselleInstrInfo : public GiselleGenInstrInfo {
   GiselleRegisterInfo RegInfo;

@@ -1,6 +1,10 @@
 #pragma once
 
 #include "GiselleTargetLowering.h"
+#include "GiselleFrameLowering.h"
+#include "GiselleInstrInfo.h"
+#include "GiselleRegisterInfo.h"
+
 #include "llvm/ADT/StringRef.h"
 #include "llvm/CodeGen/TargetSubtargetInfo.h"
 
@@ -14,16 +18,29 @@ class Triple;
 
 class GiselleSubtarget : public GiselleGenSubtargetInfo {
   virtual void anchor();
+
+  GiselleFrameLowering FrameLowering;
+  GiselleInstrInfo InstrInfo;
+  GiselleRegisterInfo RegisterInfo;
   GiselleTargetLowering TLInfo;
 
 public:
   GiselleSubtarget(const Triple &TT, StringRef CPU, StringRef FS,
                    const TargetMachine &TM);
+
+  const GiselleInstrInfo *getInstrInfo() const override { return &InstrInfo; }
+
+  const GiselleFrameLowering *getFrameLowering() const override {
+    return &FrameLowering;
+  }
+
+  const GiselleRegisterInfo *getRegisterInfo() const override {
+    return &RegisterInfo;
+  }
+
+
   const GiselleTargetLowering *getTargetLowering() const override {
     return &TLInfo;
-  }
-  const TargetRegisterInfo *getRegisterInfo() const override {
-    return nullptr; // TODO: Implement this.
   }
 
   /// Parses features string setting specified subtarget options.

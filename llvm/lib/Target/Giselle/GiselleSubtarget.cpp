@@ -18,6 +18,9 @@ using namespace llvm;
 // Pin the vtable to this file.
 void GiselleSubtarget::anchor() {}
 
-GiselleSubtarget::GiselleSubtarget(const Triple &TT, StringRef CPU, StringRef FS,
-                                   const TargetMachine &TM)
-    : GiselleGenSubtargetInfo(TT, CPU, /*TuneCPU=*/"", FS), TLInfo(TM, *this) {}
+GiselleSubtarget::GiselleSubtarget(const Triple &TT, StringRef CPU,
+                                   StringRef FS, const TargetMachine &TM)
+    : GiselleGenSubtargetInfo(TT, CPU, /*TuneCPU=*/"", FS),
+      FrameLowering(*this),
+      InstrInfo(*this),
+      TLInfo(TM, *this) {}

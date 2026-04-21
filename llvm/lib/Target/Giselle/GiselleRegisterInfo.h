@@ -1,7 +1,8 @@
+#pragma  once
+
 #include "llvm/CodeGen/TargetRegisterInfo.h"
 
 #define GET_REGINFO_HEADER
-#define GET_INSTRINFO_OPERAND_ENUM
 #include "GiselleGenRegisterInfo.inc"
 
 namespace llvm {

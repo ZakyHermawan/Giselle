@@ -15,6 +15,7 @@ add_llvm_target(GiselleCodeGen
   GiselleTargetMachine.cpp
   GiselleSubtarget.cpp
   GiselleRegisterInfo.cpp
+  GiselleInstrInfo.cpp
 
   LINK_COMPONENTS
   GiselleDesc

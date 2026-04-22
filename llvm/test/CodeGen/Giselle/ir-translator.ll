@@ -186,6 +186,42 @@ define i32 @callManyArgs2(i32 %arg1, i32 %arg2, i32 %arg3, i32 %arg4, i32 %arg5,
   ret i32 %res
 }
 
+define <2 x i32> @oneArgv2i32(<2 x i32> %arg) {
+  ; CHECK-LABEL: name: oneArgv2i32
+  ; CHECK: bb.1 (%ir-block.0):
+  ; CHECK-NEXT:   liveins: $x10, $x11
+  ; CHECK-NEXT: {{  $}}
+  ; CHECK-NEXT:   [[COPY:%[0-9]+]]:_(s32) = COPY $x10
+  ; CHECK-NEXT:   [[COPY1:%[0-9]+]]:_(s32) = COPY $x11
+  ; CHECK-NEXT:   [[BUILD_VECTOR:%[0-9]+]]:_(<2 x s32>) = G_BUILD_VECTOR [[COPY]](s32), [[COPY1]](s32)
+  ; CHECK-NEXT:   [[UV:%[0-9]+]]:_(s32), [[UV1:%[0-9]+]]:_(s32) = G_UNMERGE_VALUES [[BUILD_VECTOR]](<2 x s32>)
+  ; CHECK-NEXT:   $x10 = COPY [[UV]](s32)
+  ; CHECK-NEXT:   $x11 = COPY [[UV1]](s32)
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10, implicit $x11
+  ret <2 x i32> %arg
+}
+
+define <2 x i32> @twoArgsi32(i32 %arg, i32 %arg1) {
+  ; CHECK-LABEL: name: twoArgsi32
+  ; CHECK: bb.1 (%ir-block.0):
+  ; CHECK-NEXT:   liveins: $x10, $x11
+  ; CHECK-NEXT: {{  $}}
+  ; CHECK-NEXT:   [[COPY:%[0-9]+]]:_(s32) = COPY $x10
+  ; CHECK-NEXT:   [[COPY1:%[0-9]+]]:_(s32) = COPY $x11
+  ; CHECK-NEXT:   [[DEF:%[0-9]+]]:_(<2 x s32>) = G_IMPLICIT_DEF
+  ; CHECK-NEXT:   [[C:%[0-9]+]]:_(s32) = G_CONSTANT i32 0
+  ; CHECK-NEXT:   [[C1:%[0-9]+]]:_(s32) = G_CONSTANT i32 1
+  ; CHECK-NEXT:   [[IVEC:%[0-9]+]]:_(<2 x s32>) = G_INSERT_VECTOR_ELT [[DEF]], [[COPY]](s32), [[C]](s32)
+  ; CHECK-NEXT:   [[IVEC1:%[0-9]+]]:_(<2 x s32>) = G_INSERT_VECTOR_ELT [[IVEC]], [[COPY1]](s32), [[C1]](s32)
+  ; CHECK-NEXT:   [[UV:%[0-9]+]]:_(s32), [[UV1:%[0-9]+]]:_(s32) = G_UNMERGE_VALUES [[IVEC1]](<2 x s32>)
+  ; CHECK-NEXT:   $x10 = COPY [[UV]](s32)
+  ; CHECK-NEXT:   $x11 = COPY [[UV1]](s32)
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10, implicit $x11
+  %partial = insertelement <2 x i32> poison, i32 %arg, i32 0
+  %res = insertelement <2 x i32> %partial, i32 %arg1, i32 1
+  ret <2 x i32> %res
+}
+
 ; Lowering of structures.
 
 %struct.nested = type { i8, { i8, i32 }, i32}

@@ -1,7 +1,11 @@
+#include "GiselleCallingConvention.h"
 #include "GiselleTargetLowering.h"
-#include "MCTargetDesc/GiselleMCTargetDesc.h"
 #include "GiselleCallLowering.h"
+#include "GiselleSubtarget.h"
+#include "MCTargetDesc/GiselleMCTargetDesc.h"
 
+#include "llvm/CodeGen/Analysis.h"
+#include "llvm/CodeGen/FunctionLoweringInfo.h"
 #include "llvm/CodeGen/GlobalISel/CallLowering.h"
 #include "llvm/CodeGen/GlobalISel/MachineIRBuilder.h"
 #include "llvm/CodeGen/GlobalISel/Utils.h"
@@ -242,3 +246,194 @@ struct GiselleOutgoingValueHandler : public CallLowering::OutgoingValueHandler {
 };
 
 } // namespace
+
+bool GiselleCallLowering::lowerReturn(MachineIRBuilder &MIRBuilder,
+                                    const Value *Val, ArrayRef<Register> VRegs,
+                                    FunctionLoweringInfo &FLI) const {
+
+  auto MIB = MIRBuilder.buildInstrNoInsert(Giselle::RET_PSEUDO)
+                 .addDef(Giselle::X0)
+                 .addUse(Giselle::X1)
+                 .addImm(0);
+
+  assert(((Val && !VRegs.empty()) || (!Val && VRegs.empty())) &&
+         "Return value without a vreg");
+
+  bool Success = true;
+  if (!FLI.CanLowerReturn)
+    report_fatal_error("sret demoting not implemented yet");
+
+  if (!VRegs.empty()) {
+    MachineFunction &MF = MIRBuilder.getMF();
+    const Function &F = MF.getFunction();
+
+    MachineRegisterInfo &MRI = MF.getRegInfo();
+    const GiselleTargetLowering &TLI = *getTLI<GiselleTargetLowering>();
+    auto &DL = F.getDataLayout();
+    LLVMContext &Ctx = Val->getType()->getContext();
+
+    // Expand any value that may span several arguments (e.g., struct).
+    SmallVector<EVT, 4> SplitEVTs;
+    ComputeValueVTs(TLI, DL, Val->getType(), SplitEVTs);
+    assert(VRegs.size() == SplitEVTs.size() &&
+           "For each split Type there should be exactly one VReg.");
+
+    SmallVector<ArgInfo, 8> SplitArgs;
+    CallingConv::ID CC = F.getCallingConv();
+
+    for (unsigned I = 0; I < SplitEVTs.size(); ++I) {
+      Register CurVReg = VRegs[I];
+      ArgInfo CurArgInfo = ArgInfo{CurVReg, SplitEVTs[I].getTypeForEVT(Ctx), 0};
+      setArgFlags(CurArgInfo, AttributeList::ReturnIndex, DL, F);
+      if (TLI.getNumRegistersForCallingConv(Ctx, CC, SplitEVTs[I]) == 1) {
+        MVT NewVT = TLI.getRegisterTypeForCallingConv(Ctx, CC, SplitEVTs[I]);
+        // Some types will need extending as specified by the CC.
+        if (EVT(NewVT) != SplitEVTs[I])
+          report_fatal_error("Extension not implemented yet");
+      }
+      splitToValueTypes(CurArgInfo, SplitArgs, DL, CC);
+    }
+
+    GiselleOutgoingValueAssigner Assigner(RetCC_Giselle_Common, RetCC_Giselle_Common);
+    GiselleOutgoingValueHandler Handler(MIRBuilder, MRI, MIB);
+    Success = determineAndHandleAssignments(Handler, Assigner, SplitArgs,
+                                            MIRBuilder, CC, F.isVarArg());
+  }
+
+  MIRBuilder.insertInstr(MIB);
+  return Success;
+}
+
+bool GiselleCallLowering::canLowerReturn(MachineFunction &MF,
+                                       CallingConv::ID CallConv,
+                                       SmallVectorImpl<BaseArgInfo> &Outs,
+                                       bool IsVarArg) const {
+  SmallVector<CCValAssign, 16> ArgLocs;
+  CCState CCInfo(CallConv, IsVarArg, MF, ArgLocs,
+                 MF.getFunction().getContext());
+
+  return !IsVarArg && checkReturn(CCInfo, Outs, RetCC_Giselle_Common);
+}
+
+bool GiselleCallLowering::lowerFormalArguments(MachineIRBuilder &MIRBuilder,
+                                             const Function &F,
+                                             ArrayRef<ArrayRef<Register>> VRegs,
+                                             FunctionLoweringInfo &FLI) const {
+  MachineFunction &MF = MIRBuilder.getMF();
+  MachineBasicBlock &MBB = MIRBuilder.getMBB();
+  MachineRegisterInfo &MRI = MF.getRegInfo();
+  auto &DL = F.getDataLayout();
+  CallingConv::ID CC = F.getCallingConv();
+
+  if (F.isVarArg())
+    return false;
+
+  SmallVector<ArgInfo, 32> SplitArgs;
+
+  // Insert the hidden sret parameter if the return value won't fit in the
+  // return registers.
+  if (!FLI.CanLowerReturn)
+    insertSRetIncomingArgument(F, SplitArgs, FLI.DemoteRegister, MRI, DL);
+
+  unsigned I = 0;
+  for (auto &Arg : F.args()) {
+    if (DL.getTypeStoreSize(Arg.getType()).isZero())
+      continue;
+
+    ArgInfo OrigArg{VRegs[I], Arg.getType(), I};
+    setArgFlags(OrigArg, I + AttributeList::FirstArgIndex, DL, F);
+
+    splitToValueTypes(OrigArg, SplitArgs, DL, CC);
+    ++I;
+  }
+
+  if (!MBB.empty())
+    MIRBuilder.setInstr(*MBB.begin());
+
+  CCAssignFn *AssignFn = CC_Giselle_Common;
+
+  const GiselleSubtarget &Subtarget = MF.getSubtarget<GiselleSubtarget>();
+  GiselleIncomingValueAssigner Assigner(AssignFn, AssignFn, Subtarget, /*IsReturn=*/false);
+  GiselleFormalArgHandler Handler(MIRBuilder, MRI);
+
+  SmallVector<CCValAssign, 16> ArgLocs;
+  CCState CCInfo(CC, F.isVarArg(), MIRBuilder.getMF(), ArgLocs, F.getContext());
+
+  if (!determineAndHandleAssignments(Handler, Assigner, SplitArgs, MIRBuilder, CC, F.isVarArg()))
+    return false;
+
+  // Move back to the end of the basic block.
+  MIRBuilder.setMBB(MBB);
+  return true;
+}
+
+bool GiselleCallLowering::lowerCall(MachineIRBuilder &MIRBuilder,
+                                  CallLoweringInfo &Info) const {
+  MachineFunction &MF = MIRBuilder.getMF();
+  const Function &F = MF.getFunction();
+  MachineRegisterInfo &MRI = MF.getRegInfo();
+  auto &DL = F.getDataLayout();
+  const GiselleSubtarget &Subtarget = MF.getSubtarget<GiselleSubtarget>();
+
+  SmallVector<ArgInfo, 8> OutArgs;
+  for (auto &OrigArg : Info.OrigArgs)
+    splitToValueTypes(OrigArg, OutArgs, DL, Info.CallConv);
+
+  SmallVector<ArgInfo, 8> InArgs;
+  if (!Info.OrigRet.Ty->isVoidTy())
+    splitToValueTypes(Info.OrigRet, InArgs, DL, Info.CallConv);
+
+  CCAssignFn *AssignFnFixed;
+  CCAssignFn *AssignFnVarArg;
+  AssignFnFixed = AssignFnVarArg = CC_Giselle_Common;
+
+  MachineInstrBuilder CallSeqStart;
+  CallSeqStart = MIRBuilder.buildInstr(Giselle::ADJCALLSTACKDOWN);
+
+  // We don't support indirect calls.
+  if (!Info.Callee.isGlobal())
+    return false;
+  auto MIB = MIRBuilder.buildInstrNoInsert(Giselle::CALL_PSEUDO);
+  MIB->addOperand(MF, Info.Callee);
+
+  // Tell the call which registers are clobbered.
+  const auto &TRI = *Subtarget.getRegisterInfo();
+
+  GiselleOutgoingValueAssigner Assigner(AssignFnFixed, AssignFnVarArg);
+  // Do the actual argument marshalling.
+  GiselleOutgoingValueHandler Handler(MIRBuilder, MRI, MIB);
+  if (!determineAndHandleAssignments(Handler, Assigner, OutArgs, MIRBuilder,
+                                     Info.CallConv, Info.IsVarArg))
+    return false;
+
+  const uint32_t *Mask = TRI.getCallPreservedMask(MF, Info.CallConv);
+
+  MIB.addRegMask(Mask);
+
+  // Now we can add the actual call instruction to the correct basic block.
+  MIRBuilder.insertInstr(MIB);
+
+  CallSeqStart.addImm(Assigner.StackSize).addImm(0);
+  MIRBuilder.buildInstr(Giselle::ADJCALLSTACKUP)
+      .addImm(Assigner.StackSize)
+      .addImm(0);
+
+  if (!Info.CanLowerReturn)
+    return false;
+
+  // Finally we can copy the returned value back into its virtual-register. In
+  // symmetry with the arguments, the physical register must be an
+  // implicit-define of the call instruction.
+  if (Info.OrigRet.Ty->isVoidTy())
+    return true;
+
+  CallReturnHandler CallRetHandler(MIRBuilder, MRI, MIB);
+  if (!OutArgs.empty() && OutArgs[0].Flags[0].isReturned())
+    return false;
+
+  GiselleOutgoingValueAssigner OutValAssigner(RetCC_Giselle_Common,
+                                            RetCC_Giselle_Common);
+  return determineAndHandleAssignments(CallRetHandler, OutValAssigner, InArgs,
+                                       MIRBuilder, Info.CallConv, Info.IsVarArg,
+                                       {});
+}

@@ -14,4 +14,7 @@ using namespace llvm;
 #define DEBUG_TYPE "giselle-lowering"
 
 GiselleTargetLowering::GiselleTargetLowering(const TargetMachine &TM, const GiselleSubtarget &STI)
-    : TargetLowering(TM, STI) {}
+    : TargetLowering(TM, STI) {
+  addRegisterClass(MVT::i32, &Giselle::GPR32RegClass);
+  computeRegisterProperties(STI.getRegisterInfo());
+}

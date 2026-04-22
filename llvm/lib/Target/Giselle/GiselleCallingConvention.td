@@ -1,10 +1,14 @@
 let Entry = 1 in
 def CC_Giselle_Common : CallingConv<[
   // Promote smaller integer types to i32
-  CCIfType<[i1, i8, i16], CCPromoteToType<i32>>,
+  // CCIfType<[i1, i8, i16], CCPromoteToType<i32>>,
 
   // Pass integer arguments in registers a0-a7 (X10-X17)
-  CCIfType<[i32], CCAssignToReg<[X10, X11, X12, X13, X14, X15, X16, X17]>>
+  CCIfType<[i32], CCAssignToReg<[X10, X11, X12, X13, X14, X15, X16, X17]>>,
+
+  // If registers are exhausted, pass integer arguments on the stack.
+  // Using 4-byte size and 4-byte alignment.
+  CCAssignToStack<4, 4>
 ]>;
 
 let Entry = 1 in

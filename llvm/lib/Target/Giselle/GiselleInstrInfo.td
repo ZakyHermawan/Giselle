@@ -76,3 +76,25 @@ def JALR : GiselleIType<"jalr", "$rd, ${imm}(${rs1})",
                                 /*opcode=*/0b1100111,
                                 (outs GPR32:$rd),
                                 (ins GPR32:$rs1, u16imm12:$imm)>;
+
+// ===----------------------------------------------------------------===//
+// GlobalISel Pseudo Instructions
+// ===----------------------------------------------------------------===//
+
+// Return
+let isReturn = 1, isTerminator = 1, isBarrier = 1, Uses = [X1], isCodeGenOnly = 1 in {
+  def RET_PSEUDO : GisellePseudoInstruction<(outs), (ins), []>;
+}
+
+// Call
+let isCall = 1, Defs = [X1], Uses = [X2], isCodeGenOnly = 1 in {
+  def CALL_PSEUDO : GisellePseudoInstruction<(outs), (ins i32imm:$target), []>;
+}
+
+// Call Frame Management (Adjust Stack Pointer)
+let hasSideEffects = 1, isCodeGenOnly = 1 in {
+  let Defs = [X2], Uses = [X2] in {
+    def ADJCALLSTACKDOWN : GisellePseudoInstruction<(outs), (ins i32imm:$amt1, i32imm:$amt2), []>;
+    def ADJCALLSTACKUP   : GisellePseudoInstruction<(outs), (ins i32imm:$amt1, i32imm:$amt2), []>;
+  }
+}

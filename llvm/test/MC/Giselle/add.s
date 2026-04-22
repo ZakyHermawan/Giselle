@@ -1,9 +1,9 @@
 // RUN: llvm-mc -triple=giselle %s  -o - | FileCheck %s
 // RUN: llvm-mc -triple=giselle %s  -o - --show-encoding | FileCheck --check-prefix=ENCODING %s
 
-// CHECK: add x0, x2, x3
-// ENCODING: [0x33,0x00,0x31,0x00]
-add zero, x2, x3
+// CHECK: add x0, x6, x7
+// ENCODING: [0x33,0x00,0x73,0x00]
+add zero, t1, t2
 
 // CHECK: sub x1, x2, x3
 // ENCODING: [0xb3,0x00,0x31,0x40]

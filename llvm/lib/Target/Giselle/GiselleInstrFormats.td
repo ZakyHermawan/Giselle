@@ -52,3 +52,16 @@ class AsmImmRange<int Low, int High> : AsmOperandClass {
 def u16imm12 : Operand<i16>, ImmLeaf<i16, [{return Imm >= 0 && Imm < 4096;}]> {
   let ParserMatchClass = AsmImmRange<0, 4095>;
 }
+
+// Pseudo instructions (don't have encoding information) and must
+// disappear before the MC layer.
+class GisellePseudoInstruction<dag oops, dag iops, list<dag> pattern>
+    : Instruction {
+  let Namespace      = "Giselle";
+  dag OutOperandList = oops;
+  dag InOperandList  = iops;
+  let Pattern        = pattern;
+  let isCodeGenOnly  = 1;
+  let isPseudo       = 1;
+  let Size           = 0; 
+}

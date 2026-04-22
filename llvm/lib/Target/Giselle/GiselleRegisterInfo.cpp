@@ -34,3 +34,10 @@ bool GiselleRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
 Register GiselleRegisterInfo::getFrameRegister(const MachineFunction &MF) const {
   return Register();
 }
+
+const uint32_t *
+GiselleRegisterInfo::getCallPreservedMask(const MachineFunction &MF,
+                                          CallingConv::ID CC) const {
+  // Return the mask for the Giselle calling convention.
+  return CSR_RegMask;
+}

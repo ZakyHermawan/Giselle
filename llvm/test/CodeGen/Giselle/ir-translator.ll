@@ -23,7 +23,6 @@ define i32 @oneArgi32(i32 %arg) {
 }
 
 define i32 @manyArgs(i32 %arg1, i32 %arg2, i32 %arg3, i32 %arg4, i32 %arg5, i32 %arg6, i32 %arg7, i32 %arg8, i32 %arg9, i32 %arg10) {
-  ; We just return the 10th argument to ensure the stack load is translated.
   ; CHECK-LABEL: name: manyArgs
   ; CHECK: bb.1 (%ir-block.0):
   ; CHECK-NEXT:   liveins: $x10, $x11, $x12, $x13, $x14, $x15, $x16, $x17
@@ -44,3 +43,146 @@ define i32 @manyArgs(i32 %arg1, i32 %arg2, i32 %arg3, i32 %arg4, i32 %arg5, i32 
   ; CHECK-NEXT:   $x0 = RET_PSEUDO $x1, 0, implicit $x1, implicit $x10
   ret i32 %arg10
 }
+
+define i32 @retCst() {
+  ; CHECK-LABEL: name: retCst
+  ; CHECK: bb.1 (%ir-block.0):
+  ; CHECK-NEXT:   [[C:%[0-9]+]]:_(s32) = G_CONSTANT i32 12345
+  ; CHECK-NEXT:   $x10 = COPY [[C]](s32)
+  ; CHECK-NEXT:   $x0 = RET_PSEUDO $x1, 0, implicit $x1, implicit $x10
+  ret i32 12345
+}
+
+define void @callEmpty() {
+  ; CHECK-LABEL: name: callEmpty
+  ; CHECK: bb.1 (%ir-block.0):
+  ; CHECK-NEXT:   ADJCALLSTACKDOWN 0, 0, implicit-def $x2, implicit $x2
+  ; CHECK-NEXT:   CALL_PSEUDO @empty, csr, implicit-def $x1, implicit $x2
+  ; CHECK-NEXT:   ADJCALLSTACKUP 0, 0, implicit-def $x2, implicit $x2
+  ; CHECK-NEXT:   $x0 = RET_PSEUDO $x1, 0, implicit $x1
+  call void @empty()
+  ret void
+}
+
+define i32 @callOneArgi32() {
+  ; CHECK-LABEL: name: callOneArgi32
+  ; CHECK: bb.1 (%ir-block.0):
+  ; CHECK-NEXT:   [[C:%[0-9]+]]:_(s32) = G_CONSTANT i32 42
+  ; CHECK-NEXT:   ADJCALLSTACKDOWN 0, 0, implicit-def $x2, implicit $x2
+  ; CHECK-NEXT:   $x10 = COPY [[C]](s32)
+  ; CHECK-NEXT:   CALL_PSEUDO @oneArgi32, csr, implicit-def $x1, implicit $x2, implicit $x10, implicit-def $x10
+  ; CHECK-NEXT:   ADJCALLSTACKUP 0, 0, implicit-def $x2, implicit $x2
+  ; CHECK-NEXT:   [[COPY:%[0-9]+]]:_(s32) = COPY $x10
+  ; CHECK-NEXT:   $x10 = COPY [[COPY]](s32)
+  ; CHECK-NEXT:   $x0 = RET_PSEUDO $x1, 0, implicit $x1, implicit $x10
+  %res = call i32 @oneArgi32(i32 42)
+  ret i32 %res
+}
+
+define i32 @callManyArgs1(i32 %arg) {
+  ; CHECK-LABEL: name: callManyArgs1
+  ; CHECK: bb.1 (%ir-block.0):
+  ; CHECK-NEXT:   liveins: $x10
+  ; CHECK-NEXT: {{  $}}
+  ; CHECK-NEXT:   [[COPY:%[0-9]+]]:_(s32) = COPY $x10
+  ; CHECK-NEXT:   [[C:%[0-9]+]]:_(s32) = G_CONSTANT i32 42
+  ; CHECK-NEXT:   ADJCALLSTACKDOWN 8, 0, implicit-def $x2, implicit $x2
+  ; CHECK-NEXT:   [[COPY1:%[0-9]+]]:_(p0) = COPY $x2
+  ; CHECK-NEXT:   [[C1:%[0-9]+]]:_(s32) = G_CONSTANT i32 0
+  ; CHECK-NEXT:   [[PTR_ADD:%[0-9]+]]:_(p0) = G_PTR_ADD [[COPY1]], [[C1]](s32)
+  ; CHECK-NEXT:   G_STORE [[COPY]](s32), [[PTR_ADD]](p0) :: (store (s32) into stack, align 1)
+  ; CHECK-NEXT:   [[C2:%[0-9]+]]:_(s32) = G_CONSTANT i32 4
+  ; CHECK-NEXT:   [[PTR_ADD1:%[0-9]+]]:_(p0) = G_PTR_ADD [[COPY1]], [[C2]](s32)
+  ; CHECK-NEXT:   G_STORE [[COPY]](s32), [[PTR_ADD1]](p0) :: (store (s32) into stack + 4, align 1)
+  ; CHECK-NEXT:   $x10 = COPY [[C]](s32)
+  ; CHECK-NEXT:   $x11 = COPY [[COPY]](s32)
+  ; CHECK-NEXT:   $x12 = COPY [[COPY]](s32)
+  ; CHECK-NEXT:   $x13 = COPY [[COPY]](s32)
+  ; CHECK-NEXT:   $x14 = COPY [[COPY]](s32)
+  ; CHECK-NEXT:   $x15 = COPY [[COPY]](s32)
+  ; CHECK-NEXT:   $x16 = COPY [[COPY]](s32)
+  ; CHECK-NEXT:   $x17 = COPY [[COPY]](s32)
+  ; CHECK-NEXT:   CALL_PSEUDO @manyArgs, csr, implicit-def $x1, implicit $x2, implicit $x10, implicit $x11, implicit $x12, implicit $x13, implicit $x14, implicit $x15, implicit $x16, implicit $x17, implicit-def $x10
+  ; CHECK-NEXT:   ADJCALLSTACKUP 8, 0, implicit-def $x2, implicit $x2
+  ; CHECK-NEXT:   [[COPY2:%[0-9]+]]:_(s32) = COPY $x10
+  ; CHECK-NEXT:   $x10 = COPY [[COPY2]](s32)
+  ; CHECK-NEXT:   $x0 = RET_PSEUDO $x1, 0, implicit $x1, implicit $x10
+  %res = call i32 @manyArgs(i32 42, i32 %arg, i32 %arg, i32 %arg, i32 %arg, i32 %arg, i32 %arg, i32 %arg, i32 %arg, i32 %arg)
+  ret i32 %res
+}
+
+define i32 @callManyArgs2(i32 %arg1, i32 %arg2, i32 %arg3, i32 %arg4, i32 %arg5, i32 %arg6, i32 %arg7, i32 %arg8, i32 %arg9, i32 %arg10) {
+  ; CHECK-LABEL: name: callManyArgs2
+  ; CHECK: bb.1 (%ir-block.0):
+  ; CHECK-NEXT:   liveins: $x10, $x11, $x12, $x13, $x14, $x15, $x16, $x17
+  ; CHECK-NEXT: {{  $}}
+  ; CHECK-NEXT:   [[COPY:%[0-9]+]]:_(s32) = COPY $x10
+  ; CHECK-NEXT:   [[COPY1:%[0-9]+]]:_(s32) = COPY $x11
+  ; CHECK-NEXT:   [[COPY2:%[0-9]+]]:_(s32) = COPY $x12
+  ; CHECK-NEXT:   [[COPY3:%[0-9]+]]:_(s32) = COPY $x13
+  ; CHECK-NEXT:   [[COPY4:%[0-9]+]]:_(s32) = COPY $x14
+  ; CHECK-NEXT:   [[COPY5:%[0-9]+]]:_(s32) = COPY $x15
+  ; CHECK-NEXT:   [[COPY6:%[0-9]+]]:_(s32) = COPY $x16
+  ; CHECK-NEXT:   [[COPY7:%[0-9]+]]:_(s32) = COPY $x17
+  ; CHECK-NEXT:   [[FRAME_INDEX:%[0-9]+]]:_(p0) = G_FRAME_INDEX %fixed-stack.1
+  ; CHECK-NEXT:   [[LOAD:%[0-9]+]]:_(s32) = G_LOAD [[FRAME_INDEX]](p0) :: (invariant load (s32) from %fixed-stack.1, align 8)
+  ; CHECK-NEXT:   [[FRAME_INDEX1:%[0-9]+]]:_(p0) = G_FRAME_INDEX %fixed-stack.0
+  ; CHECK-NEXT:   [[LOAD1:%[0-9]+]]:_(s32) = G_LOAD [[FRAME_INDEX1]](p0) :: (invariant load (s32) from %fixed-stack.0)
+  ; CHECK-NEXT:   [[C:%[0-9]+]]:_(s32) = G_CONSTANT i32 42
+  ; CHECK-NEXT:   ADJCALLSTACKDOWN 12, 0, implicit-def $x2, implicit $x2
+  ; CHECK-NEXT:   [[COPY8:%[0-9]+]]:_(p0) = COPY $x2
+  ; CHECK-NEXT:   [[C1:%[0-9]+]]:_(s32) = G_CONSTANT i32 0
+  ; CHECK-NEXT:   [[PTR_ADD:%[0-9]+]]:_(p0) = G_PTR_ADD [[COPY8]], [[C1]](s32)
+  ; CHECK-NEXT:   G_STORE [[COPY7]](s32), [[PTR_ADD]](p0) :: (store (s32) into stack, align 1)
+  ; CHECK-NEXT:   [[C2:%[0-9]+]]:_(s32) = G_CONSTANT i32 4
+  ; CHECK-NEXT:   [[PTR_ADD1:%[0-9]+]]:_(p0) = G_PTR_ADD [[COPY8]], [[C2]](s32)
+  ; CHECK-NEXT:   G_STORE [[LOAD]](s32), [[PTR_ADD1]](p0) :: (store (s32) into stack + 4, align 1)
+  ; CHECK-NEXT:   [[C3:%[0-9]+]]:_(s32) = G_CONSTANT i32 8
+  ; CHECK-NEXT:   [[PTR_ADD2:%[0-9]+]]:_(p0) = G_PTR_ADD [[COPY8]], [[C3]](s32)
+  ; CHECK-NEXT:   G_STORE [[LOAD1]](s32), [[PTR_ADD2]](p0) :: (store (s32) into stack + 8, align 1)
+  ; CHECK-NEXT:   $x10 = COPY [[C]](s32)
+  ; CHECK-NEXT:   $x11 = COPY [[COPY]](s32)
+  ; CHECK-NEXT:   $x12 = COPY [[COPY1]](s32)
+  ; CHECK-NEXT:   $x13 = COPY [[COPY2]](s32)
+  ; CHECK-NEXT:   $x14 = COPY [[COPY3]](s32)
+  ; CHECK-NEXT:   $x15 = COPY [[COPY4]](s32)
+  ; CHECK-NEXT:   $x16 = COPY [[COPY5]](s32)
+  ; CHECK-NEXT:   $x17 = COPY [[COPY6]](s32)
+  ; CHECK-NEXT:   CALL_PSEUDO @manyArgs, csr, implicit-def $x1, implicit $x2, implicit $x10, implicit $x11, implicit $x12, implicit $x13, implicit $x14, implicit $x15, implicit $x16, implicit $x17, implicit-def $x10
+  ; CHECK-NEXT:   ADJCALLSTACKUP 12, 0, implicit-def $x2, implicit $x2
+  ; CHECK-NEXT:   [[COPY9:%[0-9]+]]:_(s32) = COPY $x10
+  ; CHECK-NEXT:   ADJCALLSTACKDOWN 12, 0, implicit-def $x2, implicit $x2
+  ; CHECK-NEXT:   [[COPY10:%[0-9]+]]:_(p0) = COPY $x2
+  ; CHECK-NEXT:   [[C4:%[0-9]+]]:_(s32) = G_CONSTANT i32 0
+  ; CHECK-NEXT:   [[PTR_ADD3:%[0-9]+]]:_(p0) = G_PTR_ADD [[COPY10]], [[C4]](s32)
+  ; CHECK-NEXT:   G_STORE [[COPY7]](s32), [[PTR_ADD3]](p0) :: (store (s32) into stack, align 1)
+  ; CHECK-NEXT:   [[C5:%[0-9]+]]:_(s32) = G_CONSTANT i32 4
+  ; CHECK-NEXT:   [[PTR_ADD4:%[0-9]+]]:_(p0) = G_PTR_ADD [[COPY10]], [[C5]](s32)
+  ; CHECK-NEXT:   G_STORE [[LOAD]](s32), [[PTR_ADD4]](p0) :: (store (s32) into stack + 4, align 1)
+  ; CHECK-NEXT:   [[C6:%[0-9]+]]:_(s32) = G_CONSTANT i32 8
+  ; CHECK-NEXT:   [[PTR_ADD5:%[0-9]+]]:_(p0) = G_PTR_ADD [[COPY10]], [[C6]](s32)
+  ; CHECK-NEXT:   G_STORE [[LOAD1]](s32), [[PTR_ADD5]](p0) :: (store (s32) into stack + 8, align 1)
+  ; CHECK-NEXT:   $x10 = COPY [[C]](s32)
+  ; CHECK-NEXT:   $x11 = COPY [[COPY]](s32)
+  ; CHECK-NEXT:   $x12 = COPY [[COPY1]](s32)
+  ; CHECK-NEXT:   $x13 = COPY [[COPY2]](s32)
+  ; CHECK-NEXT:   $x14 = COPY [[COPY3]](s32)
+  ; CHECK-NEXT:   $x15 = COPY [[COPY4]](s32)
+  ; CHECK-NEXT:   $x16 = COPY [[COPY5]](s32)
+  ; CHECK-NEXT:   $x17 = COPY [[COPY6]](s32)
+  ; CHECK-NEXT:   CALL_PSEUDO @manyArgs, csr, implicit-def $x1, implicit $x2, implicit $x10, implicit $x11, implicit $x12, implicit $x13, implicit $x14, implicit $x15, implicit $x16, implicit $x17, implicit-def $x10
+  ; CHECK-NEXT:   ADJCALLSTACKUP 12, 0, implicit-def $x2, implicit $x2
+  ; CHECK-NEXT:   [[COPY11:%[0-9]+]]:_(s32) = COPY $x10
+  ; CHECK-NEXT:   [[ADD:%[0-9]+]]:_(s32) = G_ADD [[COPY]], [[COPY9]]
+  ; CHECK-NEXT:   [[ADD1:%[0-9]+]]:_(s32) = G_ADD [[LOAD1]], [[COPY11]]
+  ; CHECK-NEXT:   [[ADD2:%[0-9]+]]:_(s32) = G_ADD [[ADD]], [[ADD1]]
+  ; CHECK-NEXT:   $x10 = COPY [[ADD2]](s32)
+  ; CHECK-NEXT:   $x0 = RET_PSEUDO $x1, 0, implicit $x1, implicit $x10
+  %res1 = call i32 @manyArgs(i32 42, i32 %arg1, i32 %arg2, i32 %arg3, i32 %arg4, i32 %arg5, i32 %arg6, i32 %arg7, i32 %arg8, i32 %arg9, i32 %arg10)
+  %res2 = call i32 @manyArgs(i32 42, i32 %arg1, i32 %arg2, i32 %arg3, i32 %arg4, i32 %arg5, i32 %arg6, i32 %arg7, i32 %arg8, i32 %arg9, i32 %arg10)
+  %tmp1 = add i32 %arg1, %res1
+  %tmp2 = add i32 %arg10, %res2
+  %res = add i32 %tmp1, %tmp2
+  ret i32 %res
+}
+

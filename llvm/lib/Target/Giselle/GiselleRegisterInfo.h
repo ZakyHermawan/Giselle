@@ -20,6 +20,9 @@ struct GiselleRegisterInfo : public GiselleGenRegisterInfo {
                            RegScavenger *RS = nullptr) const override;
 
   Register getFrameRegister(const MachineFunction &MF) const override;
+
+  const uint32_t *getCallPreservedMask(const MachineFunction &MF,
+                                       CallingConv::ID CC) const override;
 };
 
 } // namespace llvm

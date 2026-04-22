@@ -223,8 +223,10 @@ struct GiselleOutgoingValueHandler : public CallLowering::OutgoingValueHandler {
     // instruction).
     MIB.addUse(PhysReg, RegState::Implicit);
     assert(VA.getLocInfo() == CCValAssign::Full && "Extension not supported");
+  
+    Register ExtReg = extendRegister(ValVReg, VA);
     // Assign the value to the phys reg.
-    MIRBuilder.buildCopy(PhysReg, ValVReg);
+    MIRBuilder.buildCopy(PhysReg, ExtReg);
   }
 
   /// Emits a store instruction to save an outgoing argument to the stack.
@@ -235,7 +237,8 @@ struct GiselleOutgoingValueHandler : public CallLowering::OutgoingValueHandler {
     MachineFunction &MF = MIRBuilder.getMF();
     auto* MMO = MF.getMachineMemOperand(MPO, MachineMemOperand::MOStore, MemTy,
                                        inferAlignFromPtrInfo(MF, MPO));
-    MIRBuilder.buildStore(ValVReg, Addr, *MMO);
+    Register ExtReg = extendRegister(ValVReg, VA);
+    MIRBuilder.buildStore(ExtReg, Addr, *MMO);
   }
 
   // Builder that points on the outgoing instructions (call or return).
@@ -251,18 +254,17 @@ bool GiselleCallLowering::lowerReturn(MachineIRBuilder &MIRBuilder,
                                     const Value *Val, ArrayRef<Register> VRegs,
                                     FunctionLoweringInfo &FLI) const {
 
-  auto MIB = MIRBuilder.buildInstrNoInsert(Giselle::RET_PSEUDO)
-                 .addDef(Giselle::X0)
-                 .addUse(Giselle::X1)
-                 .addImm(0);
-
+  auto MIB = MIRBuilder.buildInstrNoInsert(Giselle::RET_PSEUDO);
   assert(((Val && !VRegs.empty()) || (!Val && VRegs.empty())) &&
          "Return value without a vreg");
 
-  bool Success = true;
-  if (!FLI.CanLowerReturn)
-    report_fatal_error("sret demoting not implemented yet");
+  if (!FLI.CanLowerReturn) {
+    insertSRetStores(MIRBuilder, Val->getType(), VRegs, FLI.DemoteRegister);
+    MIRBuilder.insertInstr(MIB);
+    return true;
+  }
 
+  bool Success = true;
   if (!VRegs.empty()) {
     MachineFunction &MF = MIRBuilder.getMF();
     const Function &F = MF.getFunction();
@@ -278,25 +280,18 @@ bool GiselleCallLowering::lowerReturn(MachineIRBuilder &MIRBuilder,
     assert(VRegs.size() == SplitEVTs.size() &&
            "For each split Type there should be exactly one VReg.");
 
-    SmallVector<ArgInfo, 8> SplitArgs;
+    SmallVector<ArgInfo, 8> SplitRetInfos;
     CallingConv::ID CC = F.getCallingConv();
 
     for (unsigned I = 0; I < SplitEVTs.size(); ++I) {
       Register CurVReg = VRegs[I];
       ArgInfo CurArgInfo = ArgInfo{CurVReg, SplitEVTs[I].getTypeForEVT(Ctx), 0};
       setArgFlags(CurArgInfo, AttributeList::ReturnIndex, DL, F);
-      if (TLI.getNumRegistersForCallingConv(Ctx, CC, SplitEVTs[I]) == 1) {
-        MVT NewVT = TLI.getRegisterTypeForCallingConv(Ctx, CC, SplitEVTs[I]);
-        // Some types will need extending as specified by the CC.
-        if (EVT(NewVT) != SplitEVTs[I])
-          report_fatal_error("Extension not implemented yet");
-      }
-      splitToValueTypes(CurArgInfo, SplitArgs, DL, CC);
+      splitToValueTypes(CurArgInfo, SplitRetInfos, DL, CC);
     }
-
     GiselleOutgoingValueAssigner Assigner(RetCC_Giselle_Common, RetCC_Giselle_Common);
     GiselleOutgoingValueHandler Handler(MIRBuilder, MRI, MIB);
-    Success = determineAndHandleAssignments(Handler, Assigner, SplitArgs,
+    Success = determineAndHandleAssignments(Handler, Assigner, SplitRetInfos,
                                             MIRBuilder, CC, F.isVarArg());
   }
 
@@ -382,6 +377,12 @@ bool GiselleCallLowering::lowerCall(MachineIRBuilder &MIRBuilder,
   SmallVector<ArgInfo, 8> InArgs;
   if (!Info.OrigRet.Ty->isVoidTy())
     splitToValueTypes(Info.OrigRet, InArgs, DL, Info.CallConv);
+
+  if (!Info.CanLowerReturn) {
+    insertSRetLoads(MIRBuilder, Info.OrigRet.Ty, Info.OrigRet.Regs,
+                    Info.DemoteRegister, Info.DemoteStackIndex);
+    return true;
+  }
 
   CCAssignFn *AssignFnFixed;
   CCAssignFn *AssignFnVarArg;

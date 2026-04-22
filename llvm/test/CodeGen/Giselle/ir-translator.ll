@@ -7,7 +7,7 @@ target triple="giselle--"
 define void @empty() {
   ; CHECK-LABEL: name: empty
   ; CHECK: bb.1 (%ir-block.0):
-  ; CHECK-NEXT:   $x0 = RET_PSEUDO $x1, 0, implicit $x1
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x1
   ret void
 }
 
@@ -18,7 +18,7 @@ define i32 @oneArgi32(i32 %arg) {
   ; CHECK-NEXT: {{  $}}
   ; CHECK-NEXT:   [[COPY:%[0-9]+]]:_(s32) = COPY $x10
   ; CHECK-NEXT:   $x10 = COPY [[COPY]](s32)
-  ; CHECK-NEXT:   $x0 = RET_PSEUDO $x1, 0, implicit $x1, implicit $x10
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10
   ret i32 %arg
 }
 
@@ -40,7 +40,7 @@ define i32 @manyArgs(i32 %arg1, i32 %arg2, i32 %arg3, i32 %arg4, i32 %arg5, i32 
   ; CHECK-NEXT:   [[FRAME_INDEX1:%[0-9]+]]:_(p0) = G_FRAME_INDEX %fixed-stack.0
   ; CHECK-NEXT:   [[LOAD1:%[0-9]+]]:_(s32) = G_LOAD [[FRAME_INDEX1]](p0) :: (invariant load (s32) from %fixed-stack.0)
   ; CHECK-NEXT:   $x10 = COPY [[LOAD1]](s32)
-  ; CHECK-NEXT:   $x0 = RET_PSEUDO $x1, 0, implicit $x1, implicit $x10
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10
   ret i32 %arg10
 }
 
@@ -49,7 +49,7 @@ define i32 @retCst() {
   ; CHECK: bb.1 (%ir-block.0):
   ; CHECK-NEXT:   [[C:%[0-9]+]]:_(s32) = G_CONSTANT i32 12345
   ; CHECK-NEXT:   $x10 = COPY [[C]](s32)
-  ; CHECK-NEXT:   $x0 = RET_PSEUDO $x1, 0, implicit $x1, implicit $x10
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10
   ret i32 12345
 }
 
@@ -59,7 +59,7 @@ define void @callEmpty() {
   ; CHECK-NEXT:   ADJCALLSTACKDOWN 0, 0, implicit-def $x2, implicit $x2
   ; CHECK-NEXT:   CALL_PSEUDO @empty, csr, implicit-def $x1, implicit $x2
   ; CHECK-NEXT:   ADJCALLSTACKUP 0, 0, implicit-def $x2, implicit $x2
-  ; CHECK-NEXT:   $x0 = RET_PSEUDO $x1, 0, implicit $x1
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x1
   call void @empty()
   ret void
 }
@@ -74,7 +74,7 @@ define i32 @callOneArgi32() {
   ; CHECK-NEXT:   ADJCALLSTACKUP 0, 0, implicit-def $x2, implicit $x2
   ; CHECK-NEXT:   [[COPY:%[0-9]+]]:_(s32) = COPY $x10
   ; CHECK-NEXT:   $x10 = COPY [[COPY]](s32)
-  ; CHECK-NEXT:   $x0 = RET_PSEUDO $x1, 0, implicit $x1, implicit $x10
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10
   %res = call i32 @oneArgi32(i32 42)
   ret i32 %res
 }
@@ -106,7 +106,7 @@ define i32 @callManyArgs1(i32 %arg) {
   ; CHECK-NEXT:   ADJCALLSTACKUP 8, 0, implicit-def $x2, implicit $x2
   ; CHECK-NEXT:   [[COPY2:%[0-9]+]]:_(s32) = COPY $x10
   ; CHECK-NEXT:   $x10 = COPY [[COPY2]](s32)
-  ; CHECK-NEXT:   $x0 = RET_PSEUDO $x1, 0, implicit $x1, implicit $x10
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10
   %res = call i32 @manyArgs(i32 42, i32 %arg, i32 %arg, i32 %arg, i32 %arg, i32 %arg, i32 %arg, i32 %arg, i32 %arg, i32 %arg)
   ret i32 %res
 }
@@ -177,7 +177,7 @@ define i32 @callManyArgs2(i32 %arg1, i32 %arg2, i32 %arg3, i32 %arg4, i32 %arg5,
   ; CHECK-NEXT:   [[ADD1:%[0-9]+]]:_(s32) = G_ADD [[LOAD1]], [[COPY11]]
   ; CHECK-NEXT:   [[ADD2:%[0-9]+]]:_(s32) = G_ADD [[ADD]], [[ADD1]]
   ; CHECK-NEXT:   $x10 = COPY [[ADD2]](s32)
-  ; CHECK-NEXT:   $x0 = RET_PSEUDO $x1, 0, implicit $x1, implicit $x10
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10
   %res1 = call i32 @manyArgs(i32 42, i32 %arg1, i32 %arg2, i32 %arg3, i32 %arg4, i32 %arg5, i32 %arg6, i32 %arg7, i32 %arg8, i32 %arg9, i32 %arg10)
   %res2 = call i32 @manyArgs(i32 42, i32 %arg1, i32 %arg2, i32 %arg3, i32 %arg4, i32 %arg5, i32 %arg6, i32 %arg7, i32 %arg8, i32 %arg9, i32 %arg10)
   %tmp1 = add i32 %arg1, %res1
@@ -186,3 +186,106 @@ define i32 @callManyArgs2(i32 %arg1, i32 %arg2, i32 %arg3, i32 %arg4, i32 %arg5,
   ret i32 %res
 }
 
+; Lowering of structures.
+
+%struct.nested = type { i8, { i8, i32 }, i32}
+
+define i32 @structInputArg(%struct.nested %struct) {
+  ; CHECK-LABEL: name: structInputArg
+  ; CHECK: bb.1 (%ir-block.0):
+  ; CHECK-NEXT:   liveins: $x10, $x11, $x12, $x13
+  ; CHECK-NEXT: {{  $}}
+  ; CHECK-NEXT:   [[COPY:%[0-9]+]]:_(s32) = COPY $x10
+  ; CHECK-NEXT:   [[TRUNC:%[0-9]+]]:_(s8) = G_TRUNC [[COPY]](s32)
+  ; CHECK-NEXT:   [[COPY1:%[0-9]+]]:_(s32) = COPY $x11
+  ; CHECK-NEXT:   [[TRUNC1:%[0-9]+]]:_(s8) = G_TRUNC [[COPY1]](s32)
+  ; CHECK-NEXT:   [[COPY2:%[0-9]+]]:_(s32) = COPY $x12
+  ; CHECK-NEXT:   [[COPY3:%[0-9]+]]:_(s32) = COPY $x13
+  ; CHECK-NEXT:   $x10 = COPY [[COPY2]](s32)
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10
+  %res = extractvalue %struct.nested %struct, 1, 1
+  ret i32 %res
+}
+
+define i32 @structOutArg() {
+  ; CHECK-LABEL: name: structOutArg
+  ; CHECK: bb.1 (%ir-block.0):
+  ; CHECK-NEXT:   [[FRAME_INDEX:%[0-9]+]]:_(p0) = G_FRAME_INDEX %stack.0.addr_input
+  ; CHECK-NEXT:   [[LOAD:%[0-9]+]]:_(s8) = G_LOAD [[FRAME_INDEX]](p0) :: (dereferenceable load (s8) from %ir.addr_input, align 4)
+  ; CHECK-NEXT:   [[C:%[0-9]+]]:_(s32) = G_CONSTANT i32 4
+  ; CHECK-NEXT:   [[PTR_ADD:%[0-9]+]]:_(p0) = nuw inbounds G_PTR_ADD [[FRAME_INDEX]], [[C]](s32)
+  ; CHECK-NEXT:   [[LOAD1:%[0-9]+]]:_(s8) = G_LOAD [[PTR_ADD]](p0) :: (dereferenceable load (s8) from %ir.addr_input + 4, align 4)
+  ; CHECK-NEXT:   [[C1:%[0-9]+]]:_(s32) = G_CONSTANT i32 8
+  ; CHECK-NEXT:   [[PTR_ADD1:%[0-9]+]]:_(p0) = nuw inbounds G_PTR_ADD [[FRAME_INDEX]], [[C1]](s32)
+  ; CHECK-NEXT:   [[LOAD2:%[0-9]+]]:_(s32) = G_LOAD [[PTR_ADD1]](p0) :: (dereferenceable load (s32) from %ir.addr_input + 8)
+  ; CHECK-NEXT:   [[C2:%[0-9]+]]:_(s32) = G_CONSTANT i32 12
+  ; CHECK-NEXT:   [[PTR_ADD2:%[0-9]+]]:_(p0) = nuw inbounds G_PTR_ADD [[FRAME_INDEX]], [[C2]](s32)
+  ; CHECK-NEXT:   [[LOAD3:%[0-9]+]]:_(s32) = G_LOAD [[PTR_ADD2]](p0) :: (dereferenceable load (s32) from %ir.addr_input + 12)
+  ; CHECK-NEXT:   ADJCALLSTACKDOWN 0, 0, implicit-def $x2, implicit $x2
+  ; CHECK-NEXT:   [[ANYEXT:%[0-9]+]]:_(s32) = G_ANYEXT [[LOAD]](s8)
+  ; CHECK-NEXT:   [[ANYEXT1:%[0-9]+]]:_(s32) = G_ANYEXT [[LOAD1]](s8)
+  ; CHECK-NEXT:   $x10 = COPY [[ANYEXT]](s32)
+  ; CHECK-NEXT:   $x11 = COPY [[ANYEXT1]](s32)
+  ; CHECK-NEXT:   $x12 = COPY [[LOAD2]](s32)
+  ; CHECK-NEXT:   $x13 = COPY [[LOAD3]](s32)
+  ; CHECK-NEXT:   CALL_PSEUDO @structInputArg, csr, implicit-def $x1, implicit $x2, implicit $x10, implicit $x11, implicit $x12, implicit $x13, implicit-def $x10
+  ; CHECK-NEXT:   ADJCALLSTACKUP 0, 0, implicit-def $x2, implicit $x2
+  ; CHECK-NEXT:   [[COPY:%[0-9]+]]:_(s32) = COPY $x10
+  ; CHECK-NEXT:   $x10 = COPY [[COPY]](s32)
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10
+  %addr_input = alloca %struct.nested
+  %input = load %struct.nested, ptr %addr_input
+  %res = call i32 @structInputArg(%struct.nested %input)
+  ret i32 %res
+}
+
+define %struct.nested @structReturn() {
+  ; CHECK-LABEL: name: structReturn
+  ; CHECK: bb.1 (%ir-block.0):
+  ; CHECK-NEXT:   liveins: $x10
+  ; CHECK-NEXT: {{  $}}
+  ; CHECK-NEXT:   [[COPY:%[0-9]+]]:_(p0) = COPY $x10
+  ; CHECK-NEXT:   [[DEF:%[0-9]+]]:_(s8) = G_IMPLICIT_DEF
+  ; CHECK-NEXT:   [[DEF1:%[0-9]+]]:_(s32) = G_IMPLICIT_DEF
+  ; CHECK-NEXT:   [[C:%[0-9]+]]:_(s8) = G_CONSTANT i8 0
+  ; CHECK-NEXT:   [[C1:%[0-9]+]]:_(s8) = G_CONSTANT i8 1
+  ; CHECK-NEXT:   [[C2:%[0-9]+]]:_(s32) = G_CONSTANT i32 2
+  ; CHECK-NEXT:   [[C3:%[0-9]+]]:_(s32) = G_CONSTANT i32 3
+  ; CHECK-NEXT:   G_STORE [[C]](s8), [[COPY]](p0) :: (store (s8), align 8)
+  ; CHECK-NEXT:   [[C4:%[0-9]+]]:_(s32) = G_CONSTANT i32 4
+  ; CHECK-NEXT:   [[PTR_ADD:%[0-9]+]]:_(p0) = nuw inbounds G_PTR_ADD [[COPY]], [[C4]](s32)
+  ; CHECK-NEXT:   G_STORE [[C1]](s8), [[PTR_ADD]](p0) :: (store (s8), align 4)
+  ; CHECK-NEXT:   [[C5:%[0-9]+]]:_(s32) = G_CONSTANT i32 8
+  ; CHECK-NEXT:   [[PTR_ADD1:%[0-9]+]]:_(p0) = nuw inbounds G_PTR_ADD [[COPY]], [[C5]](s32)
+  ; CHECK-NEXT:   G_STORE [[C2]](s32), [[PTR_ADD1]](p0) :: (store (s32), align 8)
+  ; CHECK-NEXT:   [[C6:%[0-9]+]]:_(s32) = G_CONSTANT i32 12
+  ; CHECK-NEXT:   [[PTR_ADD2:%[0-9]+]]:_(p0) = nuw inbounds G_PTR_ADD [[COPY]], [[C6]](s32)
+  ; CHECK-NEXT:   G_STORE [[C3]](s32), [[PTR_ADD2]](p0) :: (store (s32))
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x1
+  %struct1 = insertvalue %struct.nested undef, i8 0, 0
+  %struct2 = insertvalue %struct.nested %struct1, i8 1, 1, 0
+  %struct3 = insertvalue %struct.nested %struct2, i32 2, 1, 1
+  %struct4 = insertvalue %struct.nested %struct3, i32 3, 2
+  ret %struct.nested %struct4
+}
+
+define i32 @readStructReturn() {
+  ; CHECK-LABEL: name: readStructReturn
+  ; CHECK: bb.1 (%ir-block.0):
+  ; CHECK-NEXT:   [[FRAME_INDEX:%[0-9]+]]:_(p0) = G_FRAME_INDEX %stack.0
+  ; CHECK-NEXT:   [[LOAD:%[0-9]+]]:_(s8) = G_LOAD [[FRAME_INDEX]](p0) :: (load (s8) from %stack.0, align 8)
+  ; CHECK-NEXT:   [[C:%[0-9]+]]:_(s32) = G_CONSTANT i32 4
+  ; CHECK-NEXT:   [[PTR_ADD:%[0-9]+]]:_(p0) = nuw inbounds G_PTR_ADD [[FRAME_INDEX]], [[C]](s32)
+  ; CHECK-NEXT:   [[LOAD1:%[0-9]+]]:_(s8) = G_LOAD [[PTR_ADD]](p0) :: (load (s8) from %stack.0, align 4)
+  ; CHECK-NEXT:   [[C1:%[0-9]+]]:_(s32) = G_CONSTANT i32 8
+  ; CHECK-NEXT:   [[PTR_ADD1:%[0-9]+]]:_(p0) = nuw inbounds G_PTR_ADD [[FRAME_INDEX]], [[C1]](s32)
+  ; CHECK-NEXT:   [[LOAD2:%[0-9]+]]:_(s32) = G_LOAD [[PTR_ADD1]](p0) :: (load (s32) from %stack.0, align 8)
+  ; CHECK-NEXT:   [[C2:%[0-9]+]]:_(s32) = G_CONSTANT i32 12
+  ; CHECK-NEXT:   [[PTR_ADD2:%[0-9]+]]:_(p0) = nuw inbounds G_PTR_ADD [[FRAME_INDEX]], [[C2]](s32)
+  ; CHECK-NEXT:   [[LOAD3:%[0-9]+]]:_(s32) = G_LOAD [[PTR_ADD2]](p0) :: (load (s32) from %stack.0)
+  ; CHECK-NEXT:   $x10 = COPY [[LOAD3]](s32)
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10
+  %struct = call %struct.nested @structReturn()
+  %res = extractvalue %struct.nested %struct, 2
+  ret i32 %res
+}

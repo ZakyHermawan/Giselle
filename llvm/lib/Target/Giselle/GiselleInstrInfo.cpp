@@ -13,4 +13,5 @@
 
 using namespace llvm;
 
-GiselleInstrInfo::GiselleInstrInfo(const GiselleSubtarget &STI) : GiselleGenInstrInfo(STI, RegInfo), RegInfo() {}
+GiselleInstrInfo::GiselleInstrInfo(const GiselleSubtarget &STI)
+    : GiselleGenInstrInfo(STI, RegInfo), RegInfo() {}

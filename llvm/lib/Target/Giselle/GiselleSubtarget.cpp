@@ -5,6 +5,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "GiselleSubtarget.h"
+#include "GiselleCallLowering.h"
 #include "llvm/Target/TargetMachine.h"
 
 using namespace llvm;
@@ -23,4 +24,6 @@ GiselleSubtarget::GiselleSubtarget(const Triple &TT, StringRef CPU,
     : GiselleGenSubtargetInfo(TT, CPU, /*TuneCPU=*/"", FS),
       FrameLowering(*this),
       InstrInfo(*this),
-      TLInfo(TM, *this) {}
+      TLInfo(TM, *this) {
+  CallLoweringInfo.reset(new GiselleCallLowering(*getTargetLowering()));
+}

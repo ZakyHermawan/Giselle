@@ -2,6 +2,7 @@
 #include "llvm/CodeGen/GlobalISel/InstructionSelect.h"
 #include "llvm/CodeGen/GlobalISel/Legalizer.h"
 #include "llvm/CodeGen/GlobalISel/RegBankSelect.h"
+#include "llvm/InitializePasses.h" // For initializeGlobalISel.
 
 #include "GiselleTargetMachine.h"
 #include "GiselleTargetObjectFile.h"
@@ -16,6 +17,9 @@ using namespace llvm;
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeGiselleTarget() {
   // Register the target so that external tools can instantiate it.
   RegisterTargetMachine<GiselleTargetMachine> X(getTheGiselleTarget());
+
+  PassRegistry &PR = *PassRegistry::getPassRegistry();
+  initializeGlobalISel(PR);
 }
 
 static std::unique_ptr<TargetLoweringObjectFile> createTLOF(const Triple &TT) {

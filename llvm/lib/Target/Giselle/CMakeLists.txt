@@ -18,6 +18,7 @@ add_llvm_target(GiselleCodeGen
   GiselleFrameLowering.cpp
   GiselleRegisterInfo.cpp
   GiselleInstrInfo.cpp
+  GiselleCallingConvention.cpp
 
   LINK_COMPONENTS
   GiselleDesc

@@ -7,6 +7,7 @@
 
 #include "GiselleTargetLowering.h"
 #include "GiselleSubtarget.h"
+#include "GiselleCallingConvention.h"
 
 using namespace llvm;
 

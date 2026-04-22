@@ -17,7 +17,7 @@ GiselleRegisterInfo::GiselleRegisterInfo()
 
 const MCPhysReg *
 GiselleRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
-  return nullptr;
+  return CSR_SaveList;
 }
 
 BitVector GiselleRegisterInfo::getReservedRegs(const MachineFunction &MF) const {

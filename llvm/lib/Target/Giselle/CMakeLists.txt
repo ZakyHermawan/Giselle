@@ -7,6 +7,7 @@ tablegen(LLVM GiselleGenInstrInfo.inc -gen-instr-info)
 tablegen(LLVM GiselleGenAsmWriter.inc -gen-asm-writer)
 tablegen(LLVM GiselleGenAsmMatcher.inc -gen-asm-matcher)
 tablegen(LLVM GiselleGenMCCodeEmitter.inc -gen-emitter)
+tablegen(LLVM GiselleGenCallingConv.inc -gen-callingconv)
 add_public_tablegen_target(GiselleCommonTableGen)
 
 add_llvm_target(GiselleCodeGen

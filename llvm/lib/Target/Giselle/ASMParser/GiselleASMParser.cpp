@@ -77,6 +77,13 @@ private:
   ParseStatus parseRegister(OperandVector &Operands);
 
 public:
+  // To generate Match_InvalidImm...
+  enum GiselleMatchResultTy {
+    Match_InvalidSuffix = FIRST_TARGET_MATCH_RESULT_TY,
+  #define GET_OPERAND_DIAGNOSTIC_TYPES
+  #include "GiselleGenAsmMatcher.inc"
+  };
+
   GiselleAsmParser(const MCSubtargetInfo &STI, MCAsmParser &Parser,
                  const MCInstrInfo &MII, const MCTargetOptions &Options)
       : MCTargetAsmParser(Options, STI, MII) {
@@ -138,7 +145,7 @@ public:
 
   virtual void print(raw_ostream &OS, const MCAsmInfo &MAI) const override;
 
-  // Parse the mnemonics, e.g. add, sub, xor
+  // Create the mnemonics, e.g. add, sub, xor
   static std::unique_ptr<GiselleOperand> createToken(StringRef Str, SMLoc S) {
     auto Op = std::make_unique<GiselleOperand>(k_Token);
     Op->StartLoc = S;
@@ -174,6 +181,26 @@ public:
   StringRef getToken() const {
     assert(Kind == k_Token && "Invalid access!");
     return StringRef(Tok.Data, Tok.Length);
+  }
+
+  // Used by our definition of TableGen (RenderMethod)
+  void addImmOperands(MCInst &Inst, unsigned N) const {
+    assert(N == 1 && "Invalid number of operands!");
+    const MCExpr *Expr = getImm();
+    if (auto *CE = dyn_cast<MCConstantExpr>(Expr))
+      Inst.addOperand(MCOperand::createImm(CE->getValue()));
+    else
+      Inst.addOperand(MCOperand::createExpr(Expr));
+  }
+
+  template <int N, int M> bool isImmInRange() const {
+    if (!isImm())
+      return false;
+    const MCConstantExpr *MCE = dyn_cast<MCConstantExpr>(getImm());
+    if (!MCE)
+      return false;
+    int64_t Val = MCE->getValue();
+    return (Val >= N && Val <= M);
   }
 
   /// Mandatory method to avoid being an abstract class.
@@ -274,6 +301,7 @@ ParseStatus GiselleAsmParser::parseRegister(OperandVector &Operands) {
 bool GiselleAsmParser::parseInstruction(ParseInstructionInfo &Info,
                                       StringRef Name, SMLoc NameLoc,
                                       OperandVector &Operands) {
+  // Parse mnemonic
   Operands.push_back(GiselleOperand::createToken(Name, NameLoc));
 
   while (!getLexer().is(AsmToken::EndOfStatement)) {
@@ -286,9 +314,23 @@ bool GiselleAsmParser::parseInstruction(ParseInstructionInfo &Info,
       continue;
     }
 
+    // Intercept parentheses before parseImmediate groups them as expressions
+    if (getLexer().is(AsmToken::LParen)) {
+      Operands.push_back(GiselleOperand::createToken("(", getLoc()));
+      getLexer().Lex(); // consume '('
+      continue;
+    }
+
+    if (getLexer().is(AsmToken::RParen)) {
+      Operands.push_back(GiselleOperand::createToken(")", getLoc()));
+      getLexer().Lex(); // consume ')'
+      continue;
+    }
+
     // Attempt to parse token as an immediate
     if (parseImmediate(Operands).isSuccess())
       continue;
+
     SMLoc Loc = getLexer().getLoc();
     return Error(Loc, "unexpected token");
   }
@@ -354,6 +396,13 @@ bool GiselleAsmParser::matchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
     }
 
     return Error(ErrorLoc, "invalid operand for instruction");
+  case Match_InvalidImm0_4095:
+    // Any time we get here, there's nothing fancy to do. Just get the
+    // operand SMLoc and display the diagnostic.
+    ErrorLoc = ((GiselleOperand &)*Operands[ErrorInfo]).getStartLoc();
+    if (ErrorLoc == SMLoc())
+      ErrorLoc = IDLoc;
+    return Error(ErrorLoc, "immediate must be an integer in range [0, 127].");
   }
 
   llvm_unreachable("Unknown match type detected!");

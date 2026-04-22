@@ -51,7 +51,7 @@ void GiselleInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
 void GiselleInstPrinter::printImm(const MCInst *MI, unsigned OpNo,
                                 raw_ostream &O) {
   const MCOperand &Op = MI->getOperand(OpNo);
-  markup(O, Markup::Immediate) << "#" << formatImm(Op.getImm());
+  markup(O, Markup::Immediate) << formatImm(Op.getImm());
 }
 
 void GiselleInstPrinter::printRegName(raw_ostream &OS, MCRegister Reg) {

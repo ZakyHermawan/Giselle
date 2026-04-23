@@ -7,6 +7,7 @@
 #include "GiselleSubtarget.h"
 #include "GiselleCallLowering.h"
 #include "GiselleLegalizerInfo.h"
+#include "GiselleRegisterBankInfo.h"
 
 #include "llvm/Target/TargetMachine.h"
 
@@ -29,4 +30,5 @@ GiselleSubtarget::GiselleSubtarget(const Triple &TT, StringRef CPU,
       TLInfo(TM, *this) {
   CallLoweringInfo.reset(new GiselleCallLowering(*getTargetLowering()));
   Legalizer.reset(new GiselleLegalizerInfo(*this));
+  RegBankInfo.reset(new GiselleRegisterBankInfo(*getRegisterInfo()));
 }

@@ -8,6 +8,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/CodeGen/TargetSubtargetInfo.h"
 #include "llvm/CodeGen/GlobalISel/CallLowering.h"
+#include "llvm/CodeGen/GlobalISel/LegalizerInfo.h"
 
 #define GET_SUBTARGETINFO_HEADER
 #include "GiselleGenSubtargetInfo.inc"
@@ -27,6 +28,7 @@ class GiselleSubtarget : public GiselleGenSubtargetInfo {
 
   // GlobalISel related APIs.
   std::unique_ptr<CallLowering> CallLoweringInfo;
+  std::unique_ptr<LegalizerInfo> Legalizer;
 
 public:
   GiselleSubtarget(const Triple &TT, StringRef CPU, StringRef FS,
@@ -48,6 +50,10 @@ public:
 
   const CallLowering *getCallLowering() const override {
     return CallLoweringInfo.get();
+  }
+
+  const LegalizerInfo *getLegalizerInfo() const override {
+    return Legalizer.get();
   }
 
   /// Parses features string setting specified subtarget options.

@@ -20,6 +20,7 @@ add_llvm_target(GiselleCodeGen
   GiselleInstrInfo.cpp
   GiselleCallingConvention.cpp
   GiselleCallLowering.cpp
+  GiselleLegalizerInfo.cpp
 
   LINK_COMPONENTS
   GiselleDesc

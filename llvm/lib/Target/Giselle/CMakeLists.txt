@@ -9,6 +9,7 @@ tablegen(LLVM GiselleGenAsmMatcher.inc -gen-asm-matcher)
 tablegen(LLVM GiselleGenMCCodeEmitter.inc -gen-emitter)
 tablegen(LLVM GiselleGenCallingConv.inc -gen-callingconv)
 tablegen(LLVM GiselleGenRegisterBank.inc -gen-register-bank)
+tablegen(LLVM GiselleGenGlobalISel.inc -gen-global-isel)
 add_public_tablegen_target(GiselleCommonTableGen)
 
 add_llvm_target(GiselleCodeGen
@@ -23,6 +24,7 @@ add_llvm_target(GiselleCodeGen
   GiselleCallLowering.cpp
   GiselleLegalizerInfo.cpp
   GiselleRegisterBankInfo.cpp
+  GiselleInstructionSelector.cpp
 
   LINK_COMPONENTS
   GiselleDesc

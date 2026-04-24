@@ -10,6 +10,7 @@
 #include "llvm/CodeGen/GlobalISel/CallLowering.h"
 #include "llvm/CodeGen/GlobalISel/LegalizerInfo.h"
 #include "llvm/CodeGen/RegisterBankInfo.h"
+#include "llvm/CodeGen/GlobalISel/InstructionSelector.h"
 
 #define GET_SUBTARGETINFO_HEADER
 #include "GiselleGenSubtargetInfo.inc"
@@ -31,6 +32,7 @@ class GiselleSubtarget : public GiselleGenSubtargetInfo {
   std::unique_ptr<CallLowering> CallLoweringInfo;
   std::unique_ptr<LegalizerInfo> Legalizer;
   std::unique_ptr<RegisterBankInfo> RegBankInfo;
+  std::unique_ptr<InstructionSelector> InstrSelector;
 
 public:
   GiselleSubtarget(const Triple &TT, StringRef CPU, StringRef FS,
@@ -60,6 +62,10 @@ public:
 
   const RegisterBankInfo *getRegBankInfo() const override {
     return RegBankInfo.get();
+  }
+
+  InstructionSelector *getInstructionSelector() const override {
+    return InstrSelector.get();
   }
 
   /// Parses features string setting specified subtarget options.

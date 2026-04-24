@@ -1,5 +1,8 @@
 include "GiselleInstrFormats.td"
 
+
+let Pattern = [(set (i32 GPR32:$rd), (add (i32 GPR32:$rs1),
+                                           (i32 GPR32:$rs2)))] in
 def ADDi32rr : GiselleRType<"add", "$rd, $rs1, $rs2",
                                 /*func7=*/0b0000000,
                                 /*func3=*/0b000,
@@ -82,8 +85,9 @@ def JALR : GiselleIType<"jalr", "$rd, ${imm}(${rs1})",
 // ===----------------------------------------------------------------===//
 
 // Return
-let isReturn = 1, isTerminator = 1, isBarrier = 1, Uses = [X1], isCodeGenOnly = 1 in {
-  def RET_PSEUDO : GisellePseudoInstruction<(outs), (ins), []>;
+let isReturn = 1, isTerminator = 1, isBarrier = 1, isCodeGenOnly = 1 in {
+  def RET_PSEUDO : GisellePseudoInstruction<(outs), (ins), []>,
+                  PseudoInstExpansion<(JALR X0, X1, 0)>;
 }
 
 // Call

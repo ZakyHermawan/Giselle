@@ -7,7 +7,7 @@ target triple="giselle--"
 define void @empty() {
   ; CHECK-LABEL: name: empty
   ; CHECK: bb.1 (%ir-block.0):
-  ; CHECK-NEXT:   RET_PSEUDO implicit $x1
+  ; CHECK-NEXT:   RET_PSEUDO
   ret void
 }
 
@@ -18,7 +18,7 @@ define i32 @oneArgi32(i32 %arg) {
   ; CHECK-NEXT: {{  $}}
   ; CHECK-NEXT:   [[COPY:%[0-9]+]]:_(s32) = COPY $x10
   ; CHECK-NEXT:   $x10 = COPY [[COPY]](s32)
-  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x10
   ret i32 %arg
 }
 
@@ -40,7 +40,7 @@ define i32 @manyArgs(i32 %arg1, i32 %arg2, i32 %arg3, i32 %arg4, i32 %arg5, i32 
   ; CHECK-NEXT:   [[FRAME_INDEX1:%[0-9]+]]:_(p0) = G_FRAME_INDEX %fixed-stack.0
   ; CHECK-NEXT:   [[LOAD1:%[0-9]+]]:_(s32) = G_LOAD [[FRAME_INDEX1]](p0) :: (invariant load (s32) from %fixed-stack.0)
   ; CHECK-NEXT:   $x10 = COPY [[LOAD1]](s32)
-  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x10
   ret i32 %arg10
 }
 
@@ -49,7 +49,7 @@ define i32 @retCst() {
   ; CHECK: bb.1 (%ir-block.0):
   ; CHECK-NEXT:   [[C:%[0-9]+]]:_(s32) = G_CONSTANT i32 12345
   ; CHECK-NEXT:   $x10 = COPY [[C]](s32)
-  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x10
   ret i32 12345
 }
 
@@ -59,7 +59,7 @@ define void @callEmpty() {
   ; CHECK-NEXT:   ADJCALLSTACKDOWN 0, 0, implicit-def $x2, implicit $x2
   ; CHECK-NEXT:   CALL_PSEUDO @empty, csr, implicit-def $x1, implicit $x2
   ; CHECK-NEXT:   ADJCALLSTACKUP 0, 0, implicit-def $x2, implicit $x2
-  ; CHECK-NEXT:   RET_PSEUDO implicit $x1
+  ; CHECK-NEXT:   RET_PSEUDO
   call void @empty()
   ret void
 }
@@ -74,7 +74,7 @@ define i32 @callOneArgi32() {
   ; CHECK-NEXT:   ADJCALLSTACKUP 0, 0, implicit-def $x2, implicit $x2
   ; CHECK-NEXT:   [[COPY:%[0-9]+]]:_(s32) = COPY $x10
   ; CHECK-NEXT:   $x10 = COPY [[COPY]](s32)
-  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x10
   %res = call i32 @oneArgi32(i32 42)
   ret i32 %res
 }
@@ -106,7 +106,7 @@ define i32 @callManyArgs1(i32 %arg) {
   ; CHECK-NEXT:   ADJCALLSTACKUP 8, 0, implicit-def $x2, implicit $x2
   ; CHECK-NEXT:   [[COPY2:%[0-9]+]]:_(s32) = COPY $x10
   ; CHECK-NEXT:   $x10 = COPY [[COPY2]](s32)
-  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x10
   %res = call i32 @manyArgs(i32 42, i32 %arg, i32 %arg, i32 %arg, i32 %arg, i32 %arg, i32 %arg, i32 %arg, i32 %arg, i32 %arg)
   ret i32 %res
 }
@@ -177,7 +177,7 @@ define i32 @callManyArgs2(i32 %arg1, i32 %arg2, i32 %arg3, i32 %arg4, i32 %arg5,
   ; CHECK-NEXT:   [[ADD1:%[0-9]+]]:_(s32) = G_ADD [[LOAD1]], [[COPY11]]
   ; CHECK-NEXT:   [[ADD2:%[0-9]+]]:_(s32) = G_ADD [[ADD]], [[ADD1]]
   ; CHECK-NEXT:   $x10 = COPY [[ADD2]](s32)
-  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x10
   %res1 = call i32 @manyArgs(i32 42, i32 %arg1, i32 %arg2, i32 %arg3, i32 %arg4, i32 %arg5, i32 %arg6, i32 %arg7, i32 %arg8, i32 %arg9, i32 %arg10)
   %res2 = call i32 @manyArgs(i32 42, i32 %arg1, i32 %arg2, i32 %arg3, i32 %arg4, i32 %arg5, i32 %arg6, i32 %arg7, i32 %arg8, i32 %arg9, i32 %arg10)
   %tmp1 = add i32 %arg1, %res1
@@ -197,7 +197,7 @@ define <2 x i32> @oneArgv2i32(<2 x i32> %arg) {
   ; CHECK-NEXT:   [[UV:%[0-9]+]]:_(s32), [[UV1:%[0-9]+]]:_(s32) = G_UNMERGE_VALUES [[BUILD_VECTOR]](<2 x s32>)
   ; CHECK-NEXT:   $x10 = COPY [[UV]](s32)
   ; CHECK-NEXT:   $x11 = COPY [[UV1]](s32)
-  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10, implicit $x11
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x10, implicit $x11
   ret <2 x i32> %arg
 }
 
@@ -216,7 +216,7 @@ define <2 x i32> @twoArgsi32(i32 %arg, i32 %arg1) {
   ; CHECK-NEXT:   [[UV:%[0-9]+]]:_(s32), [[UV1:%[0-9]+]]:_(s32) = G_UNMERGE_VALUES [[IVEC1]](<2 x s32>)
   ; CHECK-NEXT:   $x10 = COPY [[UV]](s32)
   ; CHECK-NEXT:   $x11 = COPY [[UV1]](s32)
-  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10, implicit $x11
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x10, implicit $x11
   %partial = insertelement <2 x i32> poison, i32 %arg, i32 0
   %res = insertelement <2 x i32> %partial, i32 %arg1, i32 1
   ret <2 x i32> %res
@@ -238,7 +238,7 @@ define i32 @structInputArg(%struct.nested %struct) {
   ; CHECK-NEXT:   [[COPY2:%[0-9]+]]:_(s32) = COPY $x12
   ; CHECK-NEXT:   [[COPY3:%[0-9]+]]:_(s32) = COPY $x13
   ; CHECK-NEXT:   $x10 = COPY [[COPY2]](s32)
-  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x10
   %res = extractvalue %struct.nested %struct, 1, 1
   ret i32 %res
 }
@@ -268,7 +268,7 @@ define i32 @structOutArg() {
   ; CHECK-NEXT:   ADJCALLSTACKUP 0, 0, implicit-def $x2, implicit $x2
   ; CHECK-NEXT:   [[COPY:%[0-9]+]]:_(s32) = COPY $x10
   ; CHECK-NEXT:   $x10 = COPY [[COPY]](s32)
-  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x10
   %addr_input = alloca %struct.nested
   %input = load %struct.nested, ptr %addr_input
   %res = call i32 @structInputArg(%struct.nested %input)
@@ -297,7 +297,7 @@ define %struct.nested @structReturn() {
   ; CHECK-NEXT:   [[C6:%[0-9]+]]:_(s32) = G_CONSTANT i32 12
   ; CHECK-NEXT:   [[PTR_ADD2:%[0-9]+]]:_(p0) = nuw inbounds G_PTR_ADD [[COPY]], [[C6]](s32)
   ; CHECK-NEXT:   G_STORE [[C3]](s32), [[PTR_ADD2]](p0) :: (store (s32))
-  ; CHECK-NEXT:   RET_PSEUDO implicit $x1
+  ; CHECK-NEXT:   RET_PSEUDO
   %struct1 = insertvalue %struct.nested undef, i8 0, 0
   %struct2 = insertvalue %struct.nested %struct1, i8 1, 1, 0
   %struct3 = insertvalue %struct.nested %struct2, i32 2, 1, 1
@@ -320,7 +320,7 @@ define i32 @readStructReturn() {
   ; CHECK-NEXT:   [[PTR_ADD2:%[0-9]+]]:_(p0) = nuw inbounds G_PTR_ADD [[FRAME_INDEX]], [[C2]](s32)
   ; CHECK-NEXT:   [[LOAD3:%[0-9]+]]:_(s32) = G_LOAD [[PTR_ADD2]](p0) :: (load (s32) from %stack.0)
   ; CHECK-NEXT:   $x10 = COPY [[LOAD3]](s32)
-  ; CHECK-NEXT:   RET_PSEUDO implicit $x1, implicit $x10
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x10
   %struct = call %struct.nested @structReturn()
   %res = extractvalue %struct.nested %struct, 2
   ret i32 %res

@@ -4,11 +4,12 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "Giselle.h"
+#include "GiselleTargetMachine.h"
 #include "GiselleSubtarget.h"
 #include "GiselleCallLowering.h"
 #include "GiselleLegalizerInfo.h"
 #include "GiselleRegisterBankInfo.h"
-
 #include "llvm/Target/TargetMachine.h"
 
 using namespace llvm;
@@ -31,4 +32,8 @@ GiselleSubtarget::GiselleSubtarget(const Triple &TT, StringRef CPU,
   CallLoweringInfo.reset(new GiselleCallLowering(*getTargetLowering()));
   Legalizer.reset(new GiselleLegalizerInfo(*this));
   RegBankInfo.reset(new GiselleRegisterBankInfo(*getRegisterInfo()));
+  auto *RBI = new GiselleRegisterBankInfo(*getRegisterInfo());
+  RegBankInfo.reset(RBI);
+  InstrSelector.reset(Giselle::createInstructionSelector(
+      *static_cast<const GiselleTargetMachine *>(&TM), *this, *RBI));
 }

@@ -10,6 +10,7 @@ tablegen(LLVM GiselleGenMCCodeEmitter.inc -gen-emitter)
 tablegen(LLVM GiselleGenCallingConv.inc -gen-callingconv)
 tablegen(LLVM GiselleGenRegisterBank.inc -gen-register-bank)
 tablegen(LLVM GiselleGenGlobalISel.inc -gen-global-isel)
+tablegen(LLVM GiselleGenMCPseudoLowering.inc -gen-pseudo-lowering)
 add_public_tablegen_target(GiselleCommonTableGen)
 
 add_llvm_target(GiselleCodeGen
@@ -20,6 +21,7 @@ add_llvm_target(GiselleCodeGen
   GiselleFrameLowering.cpp
   GiselleRegisterInfo.cpp
   GiselleInstrInfo.cpp
+  GiselleAsmPrinter.cpp
   GiselleCallingConvention.cpp
   GiselleCallLowering.cpp
   GiselleLegalizerInfo.cpp
@@ -31,12 +33,15 @@ add_llvm_target(GiselleCodeGen
   GiselleInfo
 
   Analysis
+  AsmPrinter
   CodeGen
+  CodeGenTypes
   Core
   GlobalISel
+  MC
+  Passes
   Support
   Target
-  MC
   SelectionDAG
   TargetParser
   TransformUtils

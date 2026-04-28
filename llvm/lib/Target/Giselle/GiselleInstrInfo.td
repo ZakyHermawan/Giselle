@@ -1,5 +1,8 @@
 include "GiselleInstrFormats.td"
 
+// ===----------------------------------------------------------------===//
+// R-TYPE
+// ===----------------------------------------------------------------===//
 
 let Pattern = [(set (i32 GPR32:$rd), (add (i32 GPR32:$rs1),
                                            (i32 GPR32:$rs2)))] in
@@ -76,6 +79,10 @@ def XORI : GiselleIType<"xori", "$rd, $rs1, $imm",
                                 (outs GPR32:$rd),
                                 (ins GPR32:$rs1, s16imm12:$imm)>;
 
+// ===----------------------------------------------------------------===//
+// I-TYPE
+// ===----------------------------------------------------------------===//
+
 def ORI : GiselleIType<"ori", "$rd, $rs1, $imm",
                                 /*func3=*/0b110,
                                 /*opcode=*/0b0010011,
@@ -141,6 +148,25 @@ def JALR : GiselleIType<"jalr", "$rd, ${imm}(${rs1})",
                                 /*opcode=*/0b1100111,
                                 (outs GPR32:$rd),
                                 (ins GPR32:$rs1, s16imm12:$imm)>;
+
+// ===----------------------------------------------------------------===//
+// S-TYPE
+// ===----------------------------------------------------------------===//
+
+def SB : GiselleSType<"sb", "$rs2, ${imm}(${rs1})",
+                              /*func3=*/0b000,
+                              (outs),
+                              (ins GPR32:$rs2, GPR32:$rs1, s16imm12:$imm)>;
+
+def SH : GiselleSType<"sh", "$rs2, ${imm}(${rs1})",
+                              /*func3=*/0b001,
+                              (outs),
+                              (ins GPR32:$rs2, GPR32:$rs1, s16imm12:$imm)>;
+
+def SW : GiselleSType<"sw", "$rs2, ${imm}(${rs1})",
+                              /*func3=*/0b010,
+                              (outs),
+                              (ins GPR32:$rs2, GPR32:$rs1, s16imm12:$imm)>;
 
 // ===----------------------------------------------------------------===//
 // GlobalISel Pseudo Instructions

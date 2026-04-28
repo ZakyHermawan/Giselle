@@ -76,6 +76,30 @@ class GiselleShift<bits<7> funct7, bits<3> funct3, string opcodestr>
   let imm = { funct7, shamt }; 
 }
 
+class GiselleSType<string opcodestr, string operands,
+  bits<3> funct3,
+  dag oops = (outs), dag iops = (ins)> : Instruction<> {
+  let Namespace = "Giselle";
+  let AsmString = !strconcat(opcodestr, "\t", operands);
+  let OutOperandList = oops;
+  let InOperandList = iops;
+
+  bits<32> Inst;
+  bits<12> imm;
+  bits<5> rs2;
+  bits<5> rs1;
+
+  // Split the 12-bit immediate
+  let Inst{31-25} = imm{11-5};
+  let Inst{24-20} = rs2;
+  let Inst{19-15} = rs1;
+  let Inst{14-12} = funct3;
+  let Inst{11-7}  = imm{4-0};
+  
+  // Hardcoded Store Opcode
+  let Inst{6-0}   = 0b0100011; 
+}
+
 // Pseudo instructions (don't have encoding information) and must
 // disappear before the MC layer.
 class GisellePseudoInstruction<dag oops, dag iops, list<dag> pattern>

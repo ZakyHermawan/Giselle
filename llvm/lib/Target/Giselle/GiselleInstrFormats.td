@@ -6,19 +6,19 @@ class AsmImmRange<int Low, int High> : AsmOperandClass {
   let PredicateMethod = "isImmInRange<" # Low # "," # High # ">";
 }
 
-def s16imm12 : Operand<i16>, ImmLeaf<i16, [{return Imm >= -2048 && Imm < 2048;}]> {
+def s32imm12 : Operand<i32>, ImmLeaf<i32, [{return Imm >= -2048 && Imm < 2048;}]> {
   let ParserMatchClass = AsmImmRange<-2048, 2047>;
 }
 
-def u16imm12 : Operand<i16>, ImmLeaf<i16, [{return Imm >= 0 && Imm < 4096;}]> {
+def u32imm12 : Operand<i32>, ImmLeaf<i32, [{return Imm >= 0 && Imm < 4096;}]> {
   let ParserMatchClass = AsmImmRange<0, 4095>;
 }
 
-def uimm5 : Operand<i16>, ImmLeaf<i16, [{return Imm >= 0 && Imm < 32;}]> {
+def uimm5 : Operand<i32>, ImmLeaf<i32, [{return Imm >= 0 && Imm < 32;}]> {
   let ParserMatchClass = AsmImmRange<0, 31>;
 }
 
-def simm13_lsb0 : Operand<i16>, ImmLeaf<i16, [{return Imm >= -4096 && Imm < 4096;}]> {
+def simm13_lsb0 : Operand<i32>, ImmLeaf<i32, [{return Imm >= -4096 && Imm < 4096;}]> {
   let ParserMatchClass = AsmImmRange<-4096, 4095>;
 }
 
@@ -83,8 +83,10 @@ class GiselleShift<bits<7> funct7, bits<3> funct3, string opcodestr>
   // Define the 5-bit variable mapped from the (ins ...) list
   bits<5> shamt;
 
-  // Magic happens here: Concatenate funct7 (top 7) and shamt (bottom 5)
-  // to populate the 'imm' variable required by GiselleIType
+  // Concatenate funct7 (top 7) and shamt (bottom 5)
+  // to populate the 'imm' variable required by GiselleIType,
+  // We do it this way for slli, srli, and srai. Because srai has a different imm[11:5],
+  // And it based on func7.
   let imm = { funct7, shamt }; 
 }
 

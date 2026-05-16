@@ -5,67 +5,90 @@ include "GiselleInstrFormats.td"
 // ===----------------------------------------------------------------===//
 
 let Pattern = [(set (i32 GPR32:$rd), (add (i32 GPR32:$rs1),
-                                           (i32 GPR32:$rs2)))] in
+                                          (i32 GPR32:$rs2)))] in
 def ADD : GiselleRType<"add", "$rd, $rs1, $rs2",
                                 /*func7=*/0b0000000,
                                 /*func3=*/0b000,
                                 (outs GPR32:$rd),
                                 (ins GPR32:$rs1, GPR32:$rs2)>;
 
+let Pattern = [(set (i32 GPR32:$rd), (sub (i32 GPR32:$rs1),
+                                          (i32 GPR32:$rs2)))] in
 def SUB : GiselleRType<"sub", "$rd, $rs1, $rs2",
                                 /*func7=*/0b0100000,
                                 /*func3=*/0b000,
                                 (outs GPR32:$rd),
                                 (ins GPR32:$rs1, GPR32:$rs2)>;
 
+let Pattern = [(set (i32 GPR32:$rd), (xor (i32 GPR32:$rs1),
+                                          (i32 GPR32:$rs2)))] in
 def XOR : GiselleRType<"xor", "$rd, $rs1, $rs2",
                                 /*func7=*/0b0000000,
                                 /*func3=*/0b100,
                                 (outs GPR32:$rd),
                                 (ins GPR32:$rs1, GPR32:$rs2)>;
 
+let Pattern = [(set (i32 GPR32:$rd), (or (i32 GPR32:$rs1),
+                                         (i32 GPR32:$rs2)))] in
 def OR : GiselleRType<"or", "$rd, $rs1, $rs2",
                                 /*func7=*/0b0000000,
                                 /*func3=*/0b110,
                                 (outs GPR32:$rd),
                                 (ins GPR32:$rs1, GPR32:$rs2)>;
 
-
+let Pattern = [(set (i32 GPR32:$rd), (and (i32 GPR32:$rs1),
+                                          (i32 GPR32:$rs2)))] in
 def AND : GiselleRType<"and", "$rd, $rs1, $rs2",
                                 /*func7=*/0b0000000,
                                 /*func3=*/0b111,
                                 (outs GPR32:$rd),
                                 (ins GPR32:$rs1, GPR32:$rs2)>;
 
+let Pattern = [(set (i32 GPR32:$rd), (shl (i32 GPR32:$rs1),
+                                          (i32 GPR32:$rs2)))] in
 def SLL : GiselleRType<"sll", "$rd, $rs1, $rs2",
                                 /*func7=*/0b0000000,
                                 /*func3=*/0b001,
                                 (outs GPR32:$rd),
                                 (ins GPR32:$rs1, GPR32:$rs2)>;
 
+let Pattern = [(set (i32 GPR32:$rd), (srl (i32 GPR32:$rs1),
+                                          (i32 GPR32:$rs2)))] in
 def SRL : GiselleRType<"srl", "$rd, $rs1, $rs2",
                                 /*func7=*/0b0000000,
                                 /*func3=*/0b101,
                                 (outs GPR32:$rd),
                                 (ins GPR32:$rs1, GPR32:$rs2)>;
 
+let Pattern = [(set (i32 GPR32:$rd), (sra (i32 GPR32:$rs1),
+                                          (i32 GPR32:$rs2)))] in
 def SRA : GiselleRType<"sra", "$rd, $rs1, $rs2",
                                 /*func7=*/0b0100000,
                                 /*func3=*/0b101,
                                 (outs GPR32:$rd),
                                 (ins GPR32:$rs1, GPR32:$rs2)>;
 
+let Pattern = [(set (i32 GPR32:$rd), (setcc (i32 GPR32:$rs1),
+                                            (i32 GPR32:$rs2),
+                                            SETLT))] in
 def SLT : GiselleRType<"slt", "$rd, $rs1, $rs2",
                                 /*func7=*/0b0000000,
                                 /*func3=*/0b010,
                                 (outs GPR32:$rd),
                                 (ins GPR32:$rs1, GPR32:$rs2)>;
 
+let Pattern = [(set (i32 GPR32:$rd), (setcc (i32 GPR32:$rs1),
+                                            (i32 GPR32:$rs2),
+                                            SETULT))] in
 def SLTU : GiselleRType<"sltu", "$rd, $rs1, $rs2",
                                 /*func7=*/0b0000000,
                                 /*func3=*/0b011,
                                 (outs GPR32:$rd),
                                 (ins GPR32:$rs1, GPR32:$rs2)>;
+
+// ===----------------------------------------------------------------===//
+// I-TYPE
+// ===----------------------------------------------------------------===//
 
 def ADDI : GiselleIType<"addi", "$rd, $rs1, $imm",
                                 /*func3=*/0b000,
@@ -78,10 +101,6 @@ def XORI : GiselleIType<"xori", "$rd, $rs1, $imm",
                                 /*opcode=*/0b0010011,
                                 (outs GPR32:$rd),
                                 (ins GPR32:$rs1, s16imm12:$imm)>;
-
-// ===----------------------------------------------------------------===//
-// I-TYPE
-// ===----------------------------------------------------------------===//
 
 def ORI : GiselleIType<"ori", "$rd, $rs1, $imm",
                                 /*func3=*/0b110,

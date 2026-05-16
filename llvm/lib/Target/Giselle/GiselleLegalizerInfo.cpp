@@ -45,5 +45,37 @@ GiselleLegalizerInfo::GiselleLegalizerInfo(const GiselleSubtarget &ST) {
       .legalFor({S16, S32})
       .clampScalar(0, S16, S32);
 
+  getActionDefinitionsBuilder(TargetOpcode::G_SUB)
+      .legalFor({S16, S32})
+      .clampScalar(0, S16, S32);
+
+  getActionDefinitionsBuilder(TargetOpcode::G_XOR)
+      .legalFor({S16, S32})
+      .clampScalar(0, S16, S32);
+
+  getActionDefinitionsBuilder(TargetOpcode::G_OR)
+      .legalFor({S16, S32})
+      .clampScalar(0, S16, S32);
+
+  getActionDefinitionsBuilder(TargetOpcode::G_AND)
+      .legalFor({S16, S32})
+      .clampScalar(0, S16, S32);
+
+  getActionDefinitionsBuilder(TargetOpcode::G_SHL)
+      .legalFor({S16, S32})
+      .clampScalar(0, S16, S32);
+
+  getActionDefinitionsBuilder(TargetOpcode::G_LSHR)
+      .legalFor({S16, S32})
+      .clampScalar(0, S16, S32);
+
+  getActionDefinitionsBuilder(TargetOpcode::G_ASHR)
+      .legalFor({S16, S32})
+      .clampScalar(0, S16, S32);
+
+  getActionDefinitionsBuilder(TargetOpcode::G_ICMP)
+      .legalFor({S16, S32})
+      .clampScalar(0, S16, S32);
+
   getLegacyLegalizerInfo().computeTables();
 }

@@ -3,6 +3,8 @@
 // RUN: %clang_cc1 -triple giselle -O1 -emit-llvm %s -o - | FileCheck %s --check-prefix=O1
 // REQUIRES: giselle-registered-target
 
+// How to run: python3 llvm/utils/update_cc_test_checks.py --clang build/bin/clang clang/test/CodeGen/Giselle/test-suite.c
+
 // Check that the Giselle target is properly hooked up for the target agnostic
 // optimizers.
 
@@ -262,9 +264,149 @@ int f5()
     x = x - 1;
   return x;
 }
+
+// O0-LABEL: define dso_local i32 @f6(
+// O0-SAME: ) #[[ATTR0]] {
+// O0-NEXT:  [[ENTRY:.*:]]
+// O0-NEXT:    [[X:%.*]] = alloca i32, align 4
+// O0-NEXT:    store i32 50, ptr [[X]], align 4
+// O0-NEXT:    br label %[[DO_BODY:.*]]
+// O0:       [[DO_BODY]]:
+// O0-NEXT:    [[TMP0:%.*]] = load i32, ptr [[X]], align 4
+// O0-NEXT:    [[SUB:%.*]] = sub nsw i32 [[TMP0]], 1
+// O0-NEXT:    store i32 [[SUB]], ptr [[X]], align 4
+// O0-NEXT:    br label %[[DO_COND:.*]]
+// O0:       [[DO_COND]]:
+// O0-NEXT:    [[TMP1:%.*]] = load i32, ptr [[X]], align 4
+// O0-NEXT:    [[TOBOOL:%.*]] = icmp ne i32 [[TMP1]], 0
+// O0-NEXT:    br i1 [[TOBOOL]], label %[[DO_BODY]], label %[[DO_END:.*]], !llvm.loop [[LOOP6:![0-9]+]]
+// O0:       [[DO_END]]:
+// O0-NEXT:    [[TMP2:%.*]] = load i32, ptr [[X]], align 4
+// O0-NEXT:    ret i32 [[TMP2]]
+//
+// O1-LABEL: define dso_local noundef i32 @f6(
+// O1-SAME: ) local_unnamed_addr #[[ATTR0]] {
+// O1-NEXT:  [[ENTRY:.*:]]
+// O1-NEXT:    ret i32 0
+//
+int f6()
+{
+	int x;
+
+	x = 50;
+	do
+		x = x - 1;
+	while(x);
+	return x;
+}
+
+// O0-LABEL: define dso_local i32 @f7(
+// O0-SAME: ) #[[ATTR0]] {
+// O0-NEXT:  [[ENTRY:.*:]]
+// O0-NEXT:    [[X:%.*]] = alloca i32, align 4
+// O0-NEXT:    store i32 1, ptr [[X]], align 4
+// O0-NEXT:    [[TMP0:%.*]] = load i32, ptr [[X]], align 4
+// O0-NEXT:    [[MUL:%.*]] = mul nsw i32 [[TMP0]], 10
+// O0-NEXT:    store i32 [[MUL]], ptr [[X]], align 4
+// O0-NEXT:    [[TMP1:%.*]] = load i32, ptr [[X]], align 4
+// O0-NEXT:    [[DIV:%.*]] = sdiv i32 [[TMP1]], 2
+// O0-NEXT:    store i32 [[DIV]], ptr [[X]], align 4
+// O0-NEXT:    [[TMP2:%.*]] = load i32, ptr [[X]], align 4
+// O0-NEXT:    [[REM:%.*]] = srem i32 [[TMP2]], 3
+// O0-NEXT:    store i32 [[REM]], ptr [[X]], align 4
+// O0-NEXT:    [[TMP3:%.*]] = load i32, ptr [[X]], align 4
+// O0-NEXT:    [[SUB:%.*]] = sub nsw i32 [[TMP3]], 2
+// O0-NEXT:    ret i32 [[SUB]]
+//
+// O1-LABEL: define dso_local noundef i32 @f7(
+// O1-SAME: ) local_unnamed_addr #[[ATTR0]] {
+// O1-NEXT:  [[ENTRY:.*:]]
+// O1-NEXT:    ret i32 0
+//
+int f7()
+{
+	int x;
+
+	x = 1;
+	x = x * 10;
+	x = x / 2;
+	x = x % 3;
+	return x - 2;
+}
+
+// O0-LABEL: define dso_local i32 @f8(
+// O0-SAME: ) #[[ATTR0]] {
+// O0-NEXT:  [[ENTRY:.*:]]
+// O0-NEXT:    br label %[[START:.*]]
+// O0:       [[START]]:
+// O0-NEXT:    br label %[[NEXT:.*]]
+// O0:       [[SUCCESS:.*]]:
+// O0-NEXT:    ret i32 0
+// O0:       [[NEXT]]:
+// O0-NEXT:    br label %[[FOO:.*]]
+// O0:       [[FOO]]:
+// O0-NEXT:    br label %[[SUCCESS]]
+//
+// O1-LABEL: define dso_local noundef i32 @f8(
+// O1-SAME: ) local_unnamed_addr #[[ATTR0]] {
+// O1-NEXT:  [[ENTRY:.*:]]
+// O1-NEXT:    ret i32 0
+//
+int f8()
+{
+	start:
+		goto next;
+		return 1;
+	success:
+		return 0;
+	next:
+	foo:
+		goto success;
+		return 1;
+}
+
+// O0-LABEL: define dso_local i32 @f9(
+// O0-SAME: ) #[[ATTR0]] {
+// O0-NEXT:  [[ENTRY:.*:]]
+// O0-NEXT:    [[X:%.*]] = alloca i32, align 4
+// O0-NEXT:    [[Y:%.*]] = alloca i32, align 4
+// O0-NEXT:    store i32 0, ptr [[Y]], align 4
+// O0-NEXT:    store i32 0, ptr [[X]], align 4
+// O0-NEXT:    [[TMP0:%.*]] = load i32, ptr [[X]], align 4
+// O0-NEXT:    ret i32 [[TMP0]]
+//
+// O1-LABEL: define dso_local noundef i32 @f9(
+// O1-SAME: ) local_unnamed_addr #[[ATTR0]] {
+// O1-NEXT:  [[ENTRY:.*:]]
+// O1-NEXT:    ret i32 0
+//
+int f9()
+{
+	int x;
+	int y;
+	x = y = 0;
+	return x;
+}
+
+// O0-LABEL: define dso_local i32 @f10(
+// O0-SAME: ) #[[ATTR0]] {
+// O0-NEXT:  [[ENTRY:.*:]]
+// O0-NEXT:    ret i32 0
+//
+// O1-LABEL: define dso_local noundef i32 @f10(
+// O1-SAME: ) local_unnamed_addr #[[ATTR0]] {
+// O1-NEXT:  [[ENTRY:.*:]]
+// O1-NEXT:    ret i32 0
+//
+int f10()
+{
+	return (2 + 2) * 2 - 8;
+}
+
 //.
 // O0: [[LOOP2]] = distinct !{[[LOOP2]], [[META3:![0-9]+]]}
 // O0: [[META3]] = !{!"llvm.loop.mustprogress"}
 // O0: [[LOOP4]] = distinct !{[[LOOP4]], [[META3]]}
 // O0: [[LOOP5]] = distinct !{[[LOOP5]], [[META3]]}
+// O0: [[LOOP6]] = distinct !{[[LOOP6]], [[META3]]}
 //.

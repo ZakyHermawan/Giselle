@@ -382,6 +382,165 @@ return:                                           ; preds = %for.end6, %if.then
   ret i32 %6
 }
 
+define dso_local i32 @f6() #0 {
+  ; CHECK-LABEL: name: f6
+  ; CHECK: bb.1.entry:
+  ; CHECK-NEXT:   successors: %bb.2(0x80000000)
+  ; CHECK-NEXT: {{  $}}
+  ; CHECK-NEXT:   [[C:%[0-9]+]]:_(s32) = G_CONSTANT i32 50
+  ; CHECK-NEXT:   [[C1:%[0-9]+]]:_(s32) = G_CONSTANT i32 1
+  ; CHECK-NEXT:   [[C2:%[0-9]+]]:_(s32) = G_CONSTANT i32 0
+  ; CHECK-NEXT:   [[FRAME_INDEX:%[0-9]+]]:_(p0) = G_FRAME_INDEX %stack.0.x
+  ; CHECK-NEXT:   G_STORE [[C]](s32), [[FRAME_INDEX]](p0) :: (store (s32) into %ir.x)
+  ; CHECK-NEXT: {{  $}}
+  ; CHECK-NEXT: bb.2.do.body:
+  ; CHECK-NEXT:   successors: %bb.3(0x80000000)
+  ; CHECK-NEXT: {{  $}}
+  ; CHECK-NEXT:   [[LOAD:%[0-9]+]]:_(s32) = G_LOAD [[FRAME_INDEX]](p0) :: (dereferenceable load (s32) from %ir.x)
+  ; CHECK-NEXT:   [[SUB:%[0-9]+]]:_(s32) = nsw G_SUB [[LOAD]], [[C1]]
+  ; CHECK-NEXT:   G_STORE [[SUB]](s32), [[FRAME_INDEX]](p0) :: (store (s32) into %ir.x)
+  ; CHECK-NEXT: {{  $}}
+  ; CHECK-NEXT: bb.3.do.cond:
+  ; CHECK-NEXT:   successors: %bb.2(0x40000000), %bb.4(0x40000000)
+  ; CHECK-NEXT: {{  $}}
+  ; CHECK-NEXT:   [[LOAD1:%[0-9]+]]:_(s32) = G_LOAD [[FRAME_INDEX]](p0) :: (dereferenceable load (s32) from %ir.x)
+  ; CHECK-NEXT:   [[ICMP:%[0-9]+]]:_(s1) = G_ICMP intpred(ne), [[LOAD1]](s32), [[C2]]
+  ; CHECK-NEXT:   G_BRCOND [[ICMP]](s1), %bb.2
+  ; CHECK-NEXT:   G_BR %bb.4
+  ; CHECK-NEXT: {{  $}}
+  ; CHECK-NEXT: bb.4.do.end:
+  ; CHECK-NEXT:   [[LOAD2:%[0-9]+]]:_(s32) = G_LOAD [[FRAME_INDEX]](p0) :: (dereferenceable load (s32) from %ir.x)
+  ; CHECK-NEXT:   $x10 = COPY [[LOAD2]](s32)
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x10
+entry:
+  %x = alloca i32, align 4
+  store i32 50, ptr %x, align 4
+  br label %do.body
+
+do.body:                                          ; preds = %do.cond, %entry
+  %0 = load i32, ptr %x, align 4
+  %sub = sub nsw i32 %0, 1
+  store i32 %sub, ptr %x, align 4
+  br label %do.cond
+
+do.cond:                                          ; preds = %do.body
+  %1 = load i32, ptr %x, align 4
+  %tobool = icmp ne i32 %1, 0
+  br i1 %tobool, label %do.body, label %do.end, !llvm.loop !6
+
+do.end:                                           ; preds = %do.cond
+  %2 = load i32, ptr %x, align 4
+  ret i32 %2
+}
+
+define dso_local i32 @f7() #0 {
+  ; CHECK-LABEL: name: f7
+  ; CHECK: bb.1.entry:
+  ; CHECK-NEXT:   [[C:%[0-9]+]]:_(s32) = G_CONSTANT i32 1
+  ; CHECK-NEXT:   [[C1:%[0-9]+]]:_(s32) = G_CONSTANT i32 10
+  ; CHECK-NEXT:   [[C2:%[0-9]+]]:_(s32) = G_CONSTANT i32 2
+  ; CHECK-NEXT:   [[C3:%[0-9]+]]:_(s32) = G_CONSTANT i32 3
+  ; CHECK-NEXT:   [[FRAME_INDEX:%[0-9]+]]:_(p0) = G_FRAME_INDEX %stack.0.x
+  ; CHECK-NEXT:   G_STORE [[C]](s32), [[FRAME_INDEX]](p0) :: (store (s32) into %ir.x)
+  ; CHECK-NEXT:   [[LOAD:%[0-9]+]]:_(s32) = G_LOAD [[FRAME_INDEX]](p0) :: (dereferenceable load (s32) from %ir.x)
+  ; CHECK-NEXT:   [[MUL:%[0-9]+]]:_(s32) = nsw G_MUL [[LOAD]], [[C1]]
+  ; CHECK-NEXT:   G_STORE [[MUL]](s32), [[FRAME_INDEX]](p0) :: (store (s32) into %ir.x)
+  ; CHECK-NEXT:   [[LOAD1:%[0-9]+]]:_(s32) = G_LOAD [[FRAME_INDEX]](p0) :: (dereferenceable load (s32) from %ir.x)
+  ; CHECK-NEXT:   [[SDIV:%[0-9]+]]:_(s32) = G_SDIV [[LOAD1]], [[C2]]
+  ; CHECK-NEXT:   G_STORE [[SDIV]](s32), [[FRAME_INDEX]](p0) :: (store (s32) into %ir.x)
+  ; CHECK-NEXT:   [[LOAD2:%[0-9]+]]:_(s32) = G_LOAD [[FRAME_INDEX]](p0) :: (dereferenceable load (s32) from %ir.x)
+  ; CHECK-NEXT:   [[SREM:%[0-9]+]]:_(s32) = G_SREM [[LOAD2]], [[C3]]
+  ; CHECK-NEXT:   G_STORE [[SREM]](s32), [[FRAME_INDEX]](p0) :: (store (s32) into %ir.x)
+  ; CHECK-NEXT:   [[LOAD3:%[0-9]+]]:_(s32) = G_LOAD [[FRAME_INDEX]](p0) :: (dereferenceable load (s32) from %ir.x)
+  ; CHECK-NEXT:   [[SUB:%[0-9]+]]:_(s32) = nsw G_SUB [[LOAD3]], [[C2]]
+  ; CHECK-NEXT:   $x10 = COPY [[SUB]](s32)
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x10
+entry:
+  %x = alloca i32, align 4
+  store i32 1, ptr %x, align 4
+  %0 = load i32, ptr %x, align 4
+  %mul = mul nsw i32 %0, 10
+  store i32 %mul, ptr %x, align 4
+  %1 = load i32, ptr %x, align 4
+  %div = sdiv i32 %1, 2
+  store i32 %div, ptr %x, align 4
+  %2 = load i32, ptr %x, align 4
+  %rem = srem i32 %2, 3
+  store i32 %rem, ptr %x, align 4
+  %3 = load i32, ptr %x, align 4
+  %sub = sub nsw i32 %3, 2
+  ret i32 %sub
+}
+
+define dso_local i32 @f8() #0 {
+  ; CHECK-LABEL: name: f8
+  ; CHECK: bb.1.entry:
+  ; CHECK-NEXT:   successors: %bb.2(0x80000000)
+  ; CHECK-NEXT: {{  $}}
+  ; CHECK-NEXT:   [[C:%[0-9]+]]:_(s32) = G_CONSTANT i32 0
+  ; CHECK-NEXT: {{  $}}
+  ; CHECK-NEXT: bb.2.start:
+  ; CHECK-NEXT:   successors: %bb.4(0x80000000)
+  ; CHECK-NEXT: {{  $}}
+  ; CHECK-NEXT:   G_BR %bb.4
+  ; CHECK-NEXT: {{  $}}
+  ; CHECK-NEXT: bb.3.success:
+  ; CHECK-NEXT:   $x10 = COPY [[C]](s32)
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x10
+  ; CHECK-NEXT: {{  $}}
+  ; CHECK-NEXT: bb.4.next:
+  ; CHECK-NEXT:   successors: %bb.5(0x80000000)
+  ; CHECK-NEXT: {{  $}}
+  ; CHECK-NEXT: bb.5.foo:
+  ; CHECK-NEXT:   successors: %bb.3(0x80000000)
+  ; CHECK-NEXT: {{  $}}
+  ; CHECK-NEXT:   G_BR %bb.3
+entry:
+  br label %start
+
+start:                                            ; preds = %entry
+  br label %next
+
+success:                                          ; preds = %foo
+  ret i32 0
+
+next:                                             ; preds = %start
+  br label %foo
+
+foo:                                              ; preds = %next
+  br label %success
+}
+
+define dso_local i32 @f9() #0 {
+  ; CHECK-LABEL: name: f9
+  ; CHECK: bb.1.entry:
+  ; CHECK-NEXT:   [[C:%[0-9]+]]:_(s32) = G_CONSTANT i32 0
+  ; CHECK-NEXT:   [[FRAME_INDEX:%[0-9]+]]:_(p0) = G_FRAME_INDEX %stack.0.x
+  ; CHECK-NEXT:   [[FRAME_INDEX1:%[0-9]+]]:_(p0) = G_FRAME_INDEX %stack.1.y
+  ; CHECK-NEXT:   G_STORE [[C]](s32), [[FRAME_INDEX1]](p0) :: (store (s32) into %ir.y)
+  ; CHECK-NEXT:   G_STORE [[C]](s32), [[FRAME_INDEX]](p0) :: (store (s32) into %ir.x)
+  ; CHECK-NEXT:   [[LOAD:%[0-9]+]]:_(s32) = G_LOAD [[FRAME_INDEX]](p0) :: (dereferenceable load (s32) from %ir.x)
+  ; CHECK-NEXT:   $x10 = COPY [[LOAD]](s32)
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x10
+entry:
+  %x = alloca i32, align 4
+  %y = alloca i32, align 4
+  store i32 0, ptr %y, align 4
+  store i32 0, ptr %x, align 4
+  %0 = load i32, ptr %x, align 4
+  ret i32 %0
+}
+
+define dso_local i32 @f10() #0 {
+  ; CHECK-LABEL: name: f10
+  ; CHECK: bb.1.entry:
+  ; CHECK-NEXT:   [[C:%[0-9]+]]:_(s32) = G_CONSTANT i32 0
+  ; CHECK-NEXT:   $x10 = COPY [[C]](s32)
+  ; CHECK-NEXT:   RET_PSEUDO implicit $x10
+entry:
+  ret i32 0
+}
+
 attributes #0 = { noinline nounwind optnone "no-trapping-math"="true" "stack-protector-buffer-size"="8" }
 
 !llvm.module.flags = !{!0}
@@ -393,3 +552,4 @@ attributes #0 = { noinline nounwind optnone "no-trapping-math"="true" "stack-pro
 !3 = !{!"llvm.loop.mustprogress"}
 !4 = distinct !{!4, !3}
 !5 = distinct !{!5, !3}
+!6 = distinct !{!6, !3}

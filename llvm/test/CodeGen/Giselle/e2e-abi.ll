@@ -2,7 +2,6 @@
 ; How to run: python3 llvm/utils/update_llc_test_checks.py --llc-binary build/bin/llc llvm/test/CodeGen/Giselle/e2e-abi.ll
 
 ; RUN: llc -mtriple giselle-- -o - %s -global-isel -global-isel-abort=1 -verify-machineinstrs | FileCheck %s
-
 target triple="giselle--"
 
 define void @empty() {

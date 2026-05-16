@@ -244,7 +244,7 @@ let isReturn = 1, isTerminator = 1, isBarrier = 1, isCodeGenOnly = 1 in {
 }
 
 // Call
-let isCall = 1, Defs = [X1], Uses = [X2], isCodeGenOnly = 1 in {
+let isCall = 1, Defs = [X1], isCodeGenOnly = 1 in {
   def CALL_PSEUDO : GisellePseudoInstruction<(outs), (ins i32imm:$target), []>;
 }
 

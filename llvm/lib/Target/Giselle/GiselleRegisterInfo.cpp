@@ -22,6 +22,10 @@ GiselleRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
 
 BitVector GiselleRegisterInfo::getReservedRegs(const MachineFunction &MF) const {
   BitVector Reserved(getNumRegs());
+
+  // Reserve the stack register so that the register allocator doesn't
+  // touch it.
+  markSuperRegs(Reserved, Giselle::X2);
   return Reserved;
 }
 

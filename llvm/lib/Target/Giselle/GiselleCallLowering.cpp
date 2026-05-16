@@ -189,7 +189,7 @@ struct GiselleOutgoingValueHandler : public CallLowering::OutgoingValueHandler {
                            MachinePointerInfo &MPO,
                            ISD::ArgFlagsTy Flags) override {
     MachineFunction &MF = MIRBuilder.getMF();
-    LLT P0 = LLT::pointer(0, 16);
+    LLT P0 = LLT::pointer(0, 32);
     LLT S32 = LLT::scalar(32);
 
     if (!SPReg)

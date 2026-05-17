@@ -20,6 +20,12 @@ GiselleTargetLowering::GiselleTargetLowering(const TargetMachine &TM,
     : TargetLowering(TM, STI), Subtarget(STI) {
   addRegisterClass(MVT::i32, &Giselle::GPR32RegClass);
   computeRegisterProperties(STI.getRegisterInfo());
+
+  setLibcallImpl(RTLIB::SREM_I32, RTLIB::impl___modsi3);
+  setLibcallImpl(RTLIB::UREM_I32, RTLIB::impl___umodsi3);
+  setLibcallImpl(RTLIB::SDIV_I32, RTLIB::impl___divsi3);
+  setLibcallImpl(RTLIB::UDIV_I32, RTLIB::impl___udivsi3);
+  setLibcallImpl(RTLIB::MUL_I32, RTLIB::impl___mulsi3);
 }
 
 // Performs prologue and epilogue register management for target,

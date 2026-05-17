@@ -82,17 +82,19 @@ GiselleLegalizerInfo::GiselleLegalizerInfo(const GiselleSubtarget &ST) {
       .legalFor({S1})
       .minScalar(0, S1);
 
-    getActionDefinitionsBuilder(TargetOpcode::G_MUL)
-        .libcallFor({S32})
-        .widenScalarToNextPow2(0)
-        .clampScalar(0, S32, S32);
+  getActionDefinitionsBuilder(TargetOpcode::G_MUL)
+      .libcallFor({S32})
+      .widenScalarToNextPow2(0)
+      .clampScalar(0, S32, S32);
 
-    getActionDefinitionsBuilder({TargetOpcode::G_SMULH, TargetOpcode::G_UMULH}).lowerFor({S32});
+  getActionDefinitionsBuilder({TargetOpcode::G_SMULH, TargetOpcode::G_UMULH})
+      .lowerFor({S32});
 
-    getActionDefinitionsBuilder({TargetOpcode::G_UDIV, TargetOpcode::G_SDIV, TargetOpcode::G_UREM, TargetOpcode::G_SREM})
-        .libcallFor({S32})
-        .clampScalar(0, S32, S32)
-        .widenScalarToNextPow2(0);
+  getActionDefinitionsBuilder({TargetOpcode::G_UDIV, TargetOpcode::G_SDIV,
+                               TargetOpcode::G_UREM, TargetOpcode::G_SREM})
+      .libcallFor({S32})
+      .clampScalar(0, S32, S32)
+      .widenScalarToNextPow2(0);
 
   getActionDefinitionsBuilder(TargetOpcode::G_SELECT)
     .libcallFor({S32});

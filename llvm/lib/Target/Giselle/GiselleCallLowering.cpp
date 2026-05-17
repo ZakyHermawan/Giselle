@@ -391,14 +391,13 @@ bool GiselleCallLowering::lowerCall(MachineIRBuilder &MIRBuilder,
   MachineInstrBuilder CallSeqStart;
   CallSeqStart = MIRBuilder.buildInstr(Giselle::ADJCALLSTACKDOWN);
 
-  MachineInstrBuilder MIB;
-  if (!Info.Callee.isGlobal() && !Info.Callee.isSymbol()) {
-      MIB = MIRBuilder.buildInstrNoInsert(Giselle::CALL_PSEUDO_INDIRECT);
-      MIB->addOperand(MF, Info.Callee);
-  } else {
-    MIB = MIRBuilder.buildInstrNoInsert(Giselle::CALL_PSEUDO);
-    MIB->addOperand(MF, Info.Callee);
+  // We don't support indirect calls, yet.
+  if (Info.Callee.isReg()) {
+    return false;
   }
+
+  auto MIB = MIRBuilder.buildInstrNoInsert(Giselle::CALL_PSEUDO);
+  MIB->addOperand(MF, Info.Callee);
 
   // Tell the call which registers are clobbered.
   const auto &TRI = *Subtarget.getRegisterInfo();

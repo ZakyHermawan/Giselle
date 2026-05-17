@@ -214,6 +214,8 @@ public:
   bool isImm() const override { return Kind == k_Immediate; }
   bool isMem() const override { return false; }
   bool isReg() const override { return Kind == k_Register; }
+  bool isCallSymbol() const { return Kind == k_Immediate; }
+
   MCRegister getReg() const override {
     assert(Kind == k_Register && "Invalid access!");
     return Reg.RegNum;
@@ -371,7 +373,8 @@ bool GiselleAsmParser::matchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
   MCInst Inst;
   SMLoc ErrorLoc;
 
-  switch (MatchInstructionImpl(Operands, Inst, ErrorInfo, MatchingInlineAsm)) {
+  auto Result = MatchInstructionImpl(Operands, Inst, ErrorInfo, MatchingInlineAsm);
+  switch (Result) {
   default:
     break;
   case Match_Success:
@@ -404,6 +407,12 @@ bool GiselleAsmParser::matchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
       ErrorLoc = IDLoc;
     return Error(ErrorLoc, "immediate must be an integer in range [0, 127].");
   }
+
+  if (const char *MatchDiag = getMatchKindDiag((GiselleMatchResultTy)Result)) {
+    SMLoc ErrorLoc = ((GiselleOperand &)*Operands[ErrorInfo]).getStartLoc();
+    return Error(ErrorLoc, MatchDiag);
+  }
+
 
   llvm_unreachable("Unknown match type detected!");
 }

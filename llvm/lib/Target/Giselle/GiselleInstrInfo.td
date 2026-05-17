@@ -243,10 +243,21 @@ let isReturn = 1, isTerminator = 1, isBarrier = 1, isCodeGenOnly = 1 in {
                   PseudoInstExpansion<(JALR X0, X1, 0)>;
 }
 
+def CallSymbol : AsmOperandClass {
+  let Name = "CallSymbol";
+  let RenderMethod = "addImmOperands";
+  let DiagnosticType = "InvalidCallSymbol";
+  let DiagnosticString = "operand must be a bare symbol name";
+  let ParserMethod = "parseCallSymbol";
+}
+
+def call_symbol : Operand<i32> {
+  let ParserMatchClass = CallSymbol;
+}
+
 // Call
 let isCall = 1, Defs = [X1], isCodeGenOnly = 1 in {
-  def CALL_PSEUDO : GisellePseudoInstruction<(outs), (ins i32imm:$target), []>;
-  def CALL_PSEUDO_INDIRECT : GisellePseudoInstruction<(outs), (ins i32imm:$target), []>;
+  def CALL_PSEUDO : GisellePseudoInstruction<(outs), (ins call_symbol:$func), []>;
 }
 
 // Call Frame Management (Adjust Stack Pointer)
